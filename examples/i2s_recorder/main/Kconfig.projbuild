@@ -54,6 +54,12 @@ menu "Example Configuration"
             help
                 Set the GPIO number used for the clock line from I2S.
 
+        config EXAMPLE_I2S_WS_GPIO
+            int "I2S WS GPIO"
+            default 40
+            help
+                Set the GPIO number used for WS from I2S.
+
     endmenu
 
     config EXAMPLE_REC_TIME

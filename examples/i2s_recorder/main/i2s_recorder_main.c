@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#define USE_DEPRECATED_I2S_LEGACY 0
+
 /* I2S Digital Microphone Recording Example */
 #include <stdio.h>
 #include <string.h>
@@ -17,13 +19,19 @@
 #include "esp_vfs_fat.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/i2s_pdm.h"
+#if !(USE_DEPRECATED_I2S_LEGACY)
+#include "driver/i2s_std.h"
+#else
+#include "driver/i2s.h"
+#endif
 #include "driver/gpio.h"
 #include "driver/spi_common.h"
 #include "sdmmc_cmd.h"
 #include "format_wav.h"
 
-static const char *TAG = "pdm_rec_example";
+
+
+static const char *TAG = "std_rec_example";
 
 #define SPI_DMA_CHAN        SPI_DMA_CH_AUTO
 #define NUM_CHANNELS        (1) // For mono recording only!
@@ -109,7 +117,7 @@ void record_wav(uint32_t rec_time)
     }
 
     // Create new WAV file
-    FILE *f = fopen(SD_MOUNT_POINT"/record.wav", "a");
+    FILE *f = fopen(SD_MOUNT_POINT"/record.wav", "wb");
     if (f == NULL) {
         ESP_LOGE(TAG, "Failed to open file for writing");
         return;
@@ -121,7 +129,11 @@ void record_wav(uint32_t rec_time)
     // Start recording
     while (flash_wr_size < flash_rec_time) {
         // Read the RAW samples from the microphone
+#if !(USE_DEPRECATED_I2S_LEGACY)
         if (i2s_channel_read(rx_handle, (char *)i2s_readraw_buff, SAMPLE_SIZE, &bytes_read, 1000) == ESP_OK) {
+#else
+		if (i2s_read(I2S_NUM_0, &i2s_readraw_buff, SAMPLE_SIZE, &bytes_read, 1000)== ESP_OK){
+#endif
             printf("[0] %d [1] %d [2] %d [3]%d ...\n", i2s_readraw_buff[0], i2s_readraw_buff[1], i2s_readraw_buff[2], i2s_readraw_buff[3]);
             // Write the samples to the WAV file
             fwrite(i2s_readraw_buff, bytes_read, 1, f);
@@ -144,36 +156,73 @@ void record_wav(uint32_t rec_time)
 
 void init_microphone(void)
 {
+#if !(USE_DEPRECATED_I2S_LEGACY)
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
 
-    i2s_pdm_rx_config_t pdm_rx_cfg = {
-        .clk_cfg = I2S_PDM_RX_CLK_DEFAULT_CONFIG(CONFIG_EXAMPLE_SAMPLE_RATE),
-        /* The default mono slot is the left slot (whose 'select pin' of the PDM microphone is pulled down) */
-        .slot_cfg = I2S_PDM_RX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+    i2s_std_config_t rx_std_cfg = {
+        .clk_cfg  = I2S_STD_CLK_DEFAULT_CONFIG(CONFIG_EXAMPLE_SAMPLE_RATE),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
         .gpio_cfg = {
-            .clk = CONFIG_EXAMPLE_I2S_CLK_GPIO,
-            .din = CONFIG_EXAMPLE_I2S_DATA_GPIO,
+            .mclk = I2S_GPIO_UNUSED,    // some codecs may require mclk signal, this example doesn't need it
+            .bclk = CONFIG_EXAMPLE_I2S_CLK_GPIO,
+            .ws   = CONFIG_EXAMPLE_I2S_WS_GPIO,
+            .dout = I2S_GPIO_UNUSED,
+            .din  = CONFIG_EXAMPLE_I2S_DATA_GPIO,
             .invert_flags = {
-                .clk_inv = false,
+                .mclk_inv = false,
+                .bclk_inv = false,
+                .ws_inv   = false,
             },
         },
     };
-    ESP_ERROR_CHECK(i2s_channel_init_pdm_rx_mode(rx_handle, &pdm_rx_cfg));
+	rx_std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
+	//rx_std_cfg.slot_cfg.left_align = false;
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &rx_std_cfg));
+
     ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
+	
+#else // #if !(USE_DEPRECATED_I2S_LEGACY)
+	i2s_config_t i2sIn_config = {
+	  .mode = (I2S_MODE_MASTER | I2S_MODE_RX), // i2s_mode_t
+	  .sample_rate = CONFIG_EXAMPLE_SAMPLE_RATE,
+	  .bits_per_sample = (I2S_DATA_BIT_WIDTH_16BIT), // i2s_bits_per_sample_t
+	  .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+	  .communication_format = (I2S_COMM_FORMAT_STAND_I2S), // i2s_comm_format_t
+	  .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+	  .dma_buf_count = 8,
+	  .dma_buf_len = 1024
+	};
+
+	const i2s_pin_config_t i2sIn_pin_config = {
+	  .mck_io_num = I2S_PIN_NO_CHANGE,
+	  .bck_io_num = CONFIG_EXAMPLE_I2S_CLK_GPIO,
+	  .ws_io_num = CONFIG_EXAMPLE_I2S_WS_GPIO,
+	  .data_out_num = I2S_PIN_NO_CHANGE,
+	  .data_in_num = CONFIG_EXAMPLE_I2S_DATA_GPIO
+	};
+	ESP_ERROR_CHECK(i2s_driver_install(I2S_NUM_0, &i2sIn_config, 0, NULL));
+
+	ESP_ERROR_CHECK(i2s_set_pin(I2S_NUM_0, &i2sIn_pin_config));
+#endif
 }
 
 void app_main(void)
 {
-    printf("PDM microphone recording example start\n--------------------------------------\n");
+    printf("STD microphone recording example start\n--------------------------------------\n");
+	//vTaskDelay(pdMS_TO_TICKS(2000));
     // Mount the SDCard for recording the audio file
     mount_sdcard();
-    // Acquire a I2S PDM channel for the PDM digital microphone
+    // Acquire a I2S STD channel for the STD digital microphone
     init_microphone();
     ESP_LOGI(TAG, "Starting recording for %d seconds!", CONFIG_EXAMPLE_REC_TIME);
     // Start Recording
     record_wav(CONFIG_EXAMPLE_REC_TIME);
     // Stop I2S driver and destroy
+#if !(USE_DEPRECATED_I2S_LEGACY)
     ESP_ERROR_CHECK(i2s_channel_disable(rx_handle));
     ESP_ERROR_CHECK(i2s_del_channel(rx_handle));
+#else
+    ESP_ERROR_CHECK(i2s_driver_uninstall(I2S_NUM_0));
+#endif
 }
