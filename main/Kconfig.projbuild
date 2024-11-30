@@ -1,0 +1,103 @@
+menu "Switch86 Configuration"
+    menu "Touch Controller"
+        config SWITCH86_LCD_TOUCH_CONTROLLER_GT911
+            bool "Enable LCD GT911 Touch"
+            default "y"
+            help
+                Enable this option if you wish to use display touch.
+    endmenu
+
+    menu "Display"
+        config SWITCH86_LCD_RGB_BOUNCE_BUFFER_HEIGHT
+            int "RGB Bounce buffer height"
+            default 10
+            help
+                Height of bounce buffer. The width of the buffer is the same as that of the LCD.
+
+        config SWITCH86_LVGL_PORT_TASK_MAX_DELAY_MS
+            int "LVGL timer task maximum delay (ms)"
+            default 500
+            range 2 2000  # Switch86 range, adjust as needed
+            help
+            The maximum delay of the LVGL timer task, in milliseconds.
+
+        config SWITCH86_LVGL_PORT_TASK_MIN_DELAY_MS
+            int "LVGL timer task minimum delay (ms)"
+            default 10
+            range 1 100  # Switch86 range, adjust as needed
+            help
+            The minimum delay of the LVGL timer task, in milliseconds.
+
+        config SWITCH86_LVGL_PORT_TASK_PRIORITY
+            int "LVGL task priority"
+            default 2
+            help
+                The Board Support Package will create a task that will periodically handle LVGL operation in lv_timer_handler().
+
+        config SWITCH86_LVGL_PORT_TASK_STACK_SIZE_KB
+            int "LVGL task stack size (KB)"
+            default 6
+            help
+                Size(KB) of LVGL task stack.
+
+        config SWITCH86_LVGL_PORT_TASK_CORE
+            int "LVGL timer task core"
+            default -1
+            range -1 1
+            help
+            The core of the LVGL timer task.
+            Set to -1 to not specify the core.
+            Set to 1 only if the SoCs support dual-core, otherwise set to -1 or 0.
+
+        config SWITCH86_LVGL_PORT_TICK
+            int "LVGL tick period"
+            default 2
+            range 1 100
+            help
+                Period of LVGL tick timer.
+
+        config SWITCH86_LVGL_PORT_AVOID_TEAR_ENABLE
+            bool "Avoid tearing effect"
+            default "n"
+            help
+                Avoid tearing effect through LVGL buffer mode and double frame buffers of RGB LCD. This feature is only available for RGB LCD.
+
+        choice
+            depends on SWITCH86_LVGL_PORT_AVOID_TEAR_ENABLE
+            prompt "Select Avoid Tearing Mode"
+            default SWITCH86_LVGL_PORT_AVOID_TEAR_MODE_2
+            config SWITCH86_LVGL_PORT_AVOID_TEAR_MODE_1
+                bool "Mode1: LCD double-buffer & LVGL full-refresh"
+            config SWITCH86_LVGL_PORT_AVOID_TEAR_MODE_2
+                bool "Mode2: LCD triple-buffer & LVGL full-refresh"
+            config SWITCH86_LVGL_PORT_AVOID_TEAR_MODE_3
+                bool "Mode3: LCD double-buffer & LVGL direct-mode"
+            help
+                The current tearing prevention mode supports both full refresh mode and direct mode. Tearing prevention mode may consume more PSRAM space
+        endchoice
+
+        config SWITCH86_LVGL_PORT_AVOID_TEAR_MODE
+            depends on SWITCH86_LVGL_PORT_AVOID_TEAR_ENABLE
+            int
+            default 1 if SWITCH86_LVGL_PORT_AVOID_TEAR_MODE_1
+            default 2 if SWITCH86_LVGL_PORT_AVOID_TEAR_MODE_2
+            default 3 if SWITCH86_LVGL_PORT_AVOID_TEAR_MODE_3
+
+        choice
+            depends on !SWITCH86_LVGL_PORT_AVOID_TEAR_ENABLE
+            prompt "Select LVGL buffer memory capability"
+            default SWITCH86_LVGL_PORT_BUF_INTERNAL
+            config SWITCH86_LVGL_PORT_BUF_PSRAM
+                bool "PSRAM memory"
+            config SWITCH86_LVGL_PORT_BUF_INTERNAL
+                bool "Internal memory"
+        endchoice
+
+        config SWITCH86_LVGL_PORT_BUF_HEIGHT
+            depends on !SWITCH86_LVGL_PORT_AVOID_TEAR_ENABLE
+            int "LVGL buffer height"
+            default 48
+            help
+                Height of LVGL buffer. The width of the buffer is the same as that of the LCD.
+    endmenu
+endmenu
