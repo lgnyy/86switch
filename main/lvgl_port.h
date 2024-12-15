@@ -17,6 +17,13 @@
 extern "C" {
 #endif
 
+#if 0 // ljc test
+#undef CONFIG_SWITCH86_LVGL_PORT_AVOID_TEAR_ENABLE
+#undef CONFIG_SWITCH86_LVGL_PORT_AVOID_TEAR_MODE
+#define CONFIG_SWITCH86_LVGL_PORT_AVOID_TEAR_ENABLE 1
+#define CONFIG_SWITCH86_LVGL_PORT_AVOID_TEAR_MODE 2
+#endif
+
 /**
  * LVGL related parameters, can be adjusted by users
  *
