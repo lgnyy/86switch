@@ -7,7 +7,7 @@
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "driver/gpio.h"
-#include "driver/i2c.h"
+#include "driver/i2c_master.h"
 #include "driver/spi_master.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -201,22 +201,24 @@ static esp_lcd_touch_handle_t _touch_init(void)
     esp_lcd_touch_handle_t tp_handle = NULL;
 #if CONFIG_SWITCH86_LCD_TOUCH_CONTROLLER_GT911
     ESP_LOGI(TAG, "Initialize I2C bus");
-    const i2c_config_t i2c_conf = {
-        .mode = I2C_MODE_MASTER,
+    const i2c_master_bus_config_t i2c_bus_config = {
+        .i2c_port = I2C_NUM_0,
         .sda_io_num = SWITCH86_PIN_NUM_TOUCH_SDA,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
         .scl_io_num = SWITCH86_PIN_NUM_TOUCH_SCL,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = 400 * 1000,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = true,
     };
-    ESP_ERROR_CHECK(i2c_param_config(TOUCH_HOST, &i2c_conf));
-    ESP_ERROR_CHECK(i2c_driver_install(TOUCH_HOST, i2c_conf.mode, 0, 0, 0));
+
+    i2c_master_bus_handle_t bus_handle;
+    ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_bus_config, &bus_handle));
 
     esp_lcd_panel_io_handle_t tp_io_handle = NULL;
-    const esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
+    esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG();
+    tp_io_config.scl_speed_hz = 400 * 1000; // must
 
     ESP_LOGI(TAG, "Initialize I2C panel IO");
-    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)TOUCH_HOST, &tp_io_config, &tp_io_handle));
+    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c(bus_handle, &tp_io_config, &tp_io_handle));
 
     ESP_LOGI(TAG, "Initialize touch controller GT911");
     const esp_lcd_touch_config_t tp_cfg = {
@@ -243,6 +245,8 @@ static esp_lcd_touch_handle_t _touch_init(void)
 
 void app_main()
 {
+    ESP_LOGI(TAG, "esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+ 
     if (SWITCH86_PIN_NUM_BK_LIGHT >= 0) {
         ESP_LOGI(TAG, "Turn off LCD backlight");
         gpio_config_t bk_gpio_config = {
@@ -271,6 +275,7 @@ void app_main()
         ESP_LOGI(TAG, "Turn on LCD backlight");
         gpio_set_level(SWITCH86_PIN_NUM_BK_LIGHT, SWITCH86_LCD_BK_LIGHT_ON_LEVEL);
     }
+
 
     ESP_LOGI(TAG, "Display LVGL demos");
     // Lock the mutex due to the LVGL APIs are not thread-safe

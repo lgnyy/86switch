@@ -107,8 +107,9 @@ static lv_display_t *display_init(esp_lcd_panel_handle_t panel_handle)
     void *buf2 = NULL;
 
     ESP_LOGD(TAG, "Malloc memory for LVGL buffer");
+    ESP_LOGI(TAG, "esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 #if LVGL_PORT_AVOID_TEAR_ENABLE
-    int buffer_size = LVGL_PORT_H_RES * LVGL_PORT_V_RES * sizeof(lv_color_t);
+    int buffer_size = LVGL_PORT_H_RES * LVGL_PORT_V_RES * sizeof(lv_color16_t);
 #if LVGL_PORT_DIRECT_MODE
 #if LVGL_PORT_LCD_RGB_BUFFER_NUMS == 1
     ESP_ERROR_CHECK(esp_lcd_rgb_panel_get_frame_buffer(panel_handle, 1, &buf1));
@@ -127,9 +128,13 @@ static lv_display_t *display_init(esp_lcd_panel_handle_t panel_handle)
     lvgl_port_flush_next_buf = lvgl_port_flush_bufs+2;
 #endif
 #else
-    int buffer_size = LVGL_PORT_H_RES * LVGL_PORT_BUFFER_HEIGHT * sizeof(lv_color_t);
+    int buffer_size = LVGL_PORT_H_RES * LVGL_PORT_BUFFER_HEIGHT * sizeof(lv_color16_t);
     // Normmaly, for RGB LCD, we just use one buffer for LVGL rendering
     buf1 = heap_caps_malloc(buffer_size, LVGL_PORT_BUFFER_MALLOC_CAPS);
+    if (buf1 == NULL){
+    ESP_LOGI(TAG, "esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+        buf1 = heap_caps_malloc(buffer_size, MALLOC_CAP_SPIRAM);
+    }
     assert(buf1);
     ESP_LOGI(TAG, "LVGL buffer size: %dKB", buffer_size / 1024);
 #endif /* LVGL_PORT_AVOID_TEAR_ENABLE */
@@ -188,22 +193,13 @@ static lv_indev_t *indev_init(esp_lcd_touch_handle_t tp)
     return indev_touchpad;
 }
 
-static void tick_increment(void *arg)
-{
-    /* Tell LVGL how many milliseconds have elapsed */
-    lv_tick_inc(LVGL_PORT_TICK_PERIOD_MS);
-}
-
+static uint32_t tick_get_time(){
+    return (uint32_t)(esp_timer_get_time() / 1000);
+} 
 static esp_err_t tick_init(void)
 {
-    // Tick interface for LVGL (using esp_timer to generate 2ms periodic event)
-    const esp_timer_create_args_t lvgl_tick_timer_args = {
-        .callback = &tick_increment,
-        .name = "LVGL tick"
-    };
-    esp_timer_handle_t lvgl_tick_timer = NULL;
-    ESP_ERROR_CHECK(esp_timer_create(&lvgl_tick_timer_args, &lvgl_tick_timer));
-    return esp_timer_start_periodic(lvgl_tick_timer, LVGL_PORT_TICK_PERIOD_MS * 1000);
+    lv_tick_set_cb(tick_get_time); // xTaskGetTickCount
+    return ESP_OK;
 }
 
 static void lvgl_port_task(void *arg)

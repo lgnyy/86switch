@@ -17,3 +17,19 @@ dependencies:
   esp_lcd_panel_io_additions:
     version: "*"
     public: true
+
+  esp_websocket_client: "^1.1.0"
+  
+  lgnyy/libfvad:
+    path: "libfvad"
+    git: "ssh://git@github.com/lgnyy/idf_component.git"
+  
+  lgnyy/yos:
+    path: "yos"
+    git: "ssh://git@github.com/lgnyy/idf_component.git"
+  
+  lgnyy/xmiot:
+    path: "xmiot"
+    git: "ssh://git@github.com/lgnyy/idf_component.git"
+    #override_path: "../../idf_component/xmiot"
+  
