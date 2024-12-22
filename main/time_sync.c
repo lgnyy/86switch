@@ -9,11 +9,15 @@
 #include <sys/time.h>
 #include "nvs.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "esp_netif_sntp.h"
 
 static const char *TAG = "time_sync";
 
 #define NVS_TIME_INFO_NAMESPACE "time_info"
+/* Timer interval once every day (24 Hours) */
+#define NVS_TIME_PERIOD (86400000000ULL)
+
 
 static void initialize_sntp(void)
 {
@@ -42,7 +46,7 @@ static esp_err_t obtain_time(void)
     return ESP_OK;
 }
 
-esp_err_t time_sync_fetch_and_store_in_nvs(void *args)
+static esp_err_t fetch_and_store_time_in_nvs(void *args)
 {
     nvs_handle_t my_handle = 0;
     esp_err_t err;
@@ -87,7 +91,7 @@ exit:
     return err;
 }
 
-esp_err_t time_sync_update_from_nvs(void)
+static esp_err_t update_time_from_nvs(void)
 {
     nvs_handle_t my_handle = 0;
     esp_err_t err;
@@ -103,7 +107,7 @@ esp_err_t time_sync_update_from_nvs(void)
     err = nvs_get_i64(my_handle, "timestamp", &timestamp);
     if (err == ESP_ERR_NVS_NOT_FOUND) {
         ESP_LOGI(TAG, "Time not found in NVS. Syncing time from SNTP server.");
-        if (time_sync_fetch_and_store_in_nvs(NULL) != ESP_OK) {
+        if (fetch_and_store_time_in_nvs(NULL) != ESP_OK) {
             err = ESP_FAIL;
         } else {
             err = ESP_OK;
@@ -119,4 +123,21 @@ exit:
         nvs_close(my_handle);
     }
     return err;
+}
+
+
+void time_sync_int(void)
+{
+    if (esp_reset_reason() == ESP_RST_POWERON) {
+        ESP_LOGI(TAG, "Updating time from NVS");
+        ESP_ERROR_CHECK(update_time_from_nvs());
+    }
+
+    const esp_timer_create_args_t nvs_update_timer_args = {
+        .callback = (void *)&fetch_and_store_time_in_nvs,
+    };
+
+    esp_timer_handle_t nvs_update_timer;
+    ESP_ERROR_CHECK(esp_timer_create(&nvs_update_timer_args, &nvs_update_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(nvs_update_timer, NVS_TIME_PERIOD));
 }
