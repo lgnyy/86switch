@@ -16,8 +16,8 @@
 #include "esp_lcd_panel_io_additions.h"
 #include "esp_lcd_touch_gt911.h"
 #include "esp_lcd_st7701.h"
-#include "lv_demos.h"
 #include "lvgl_port.h"
+#include "nvs_cfg.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Please update the following configuration according to your LCD spec //////////////////////////////
@@ -62,7 +62,7 @@
 //////////////////// Please update the following configuration according to your touch spec ////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if CONFIG_SWITCH86_LCD_TOUCH_CONTROLLER_GT911
-#define TOUCH_HOST                       (I2C_NUM_0)
+#define SWITCH86_TOUCH_HOST              (I2C_NUM_0)
 #define SWITCH86_PIN_NUM_TOUCH_SCL       (GPIO_NUM_45)
 #define SWITCH86_PIN_NUM_TOUCH_SDA       (GPIO_NUM_19)
 #define SWITCH86_PIN_NUM_TOUCH_RST       (-1)            // -1 if not used
@@ -71,10 +71,6 @@
 
 static const char *TAG = "switch86";
 
-IRAM_ATTR static bool rgb_lcd_on_vsync_event(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx)
-{
-    return lvgl_port_notify_rgb_vsync();
-}
 
 static const st7701_lcd_init_cmd_t _lcd_init_cmds[] = {
 //  {cmd, { data }, data_size, delay_ms}
@@ -202,7 +198,7 @@ static esp_lcd_touch_handle_t _touch_init(void)
 #if CONFIG_SWITCH86_LCD_TOUCH_CONTROLLER_GT911
     ESP_LOGI(TAG, "Initialize I2C bus");
     const i2c_master_bus_config_t i2c_bus_config = {
-        .i2c_port = I2C_NUM_0,
+        .i2c_port = SWITCH86_TOUCH_HOST,
         .sda_io_num = SWITCH86_PIN_NUM_TOUCH_SDA,
         .scl_io_num = SWITCH86_PIN_NUM_TOUCH_SCL,
         .clk_source = I2C_CLK_SRC_DEFAULT,
@@ -262,30 +258,20 @@ void app_main()
 
     ESP_ERROR_CHECK(lvgl_port_init(lcd_handle, tp_handle));
 
-    esp_lcd_rgb_panel_event_callbacks_t cbs = {
-#if SWITCH86_RGB_BOUNCE_BUFFER_SIZE > 0
-        .on_bounce_frame_finish = rgb_lcd_on_vsync_event,
-#else
-        .on_vsync = rgb_lcd_on_vsync_event,
-#endif
-    };
-    esp_lcd_rgb_panel_register_event_callbacks(lcd_handle, &cbs, NULL);
-
     if (SWITCH86_PIN_NUM_BK_LIGHT >= 0) {
         ESP_LOGI(TAG, "Turn on LCD backlight");
         gpio_set_level(SWITCH86_PIN_NUM_BK_LIGHT, SWITCH86_LCD_BK_LIGHT_ON_LEVEL);
     }
 
+    ESP_ERROR_CHECK(nvs_cfg_init());
 
-    ESP_LOGI(TAG, "Display LVGL demos");
-    // Lock the mutex due to the LVGL APIs are not thread-safe
-    if (lvgl_port_lock(-1)) {
-        // lv_demo_stress();
-        // lv_demo_benchmark();
-        // lv_demo_music();
-         lv_demo_widgets();
-
-        // Release the mutex
-        lvgl_port_unlock();
-    }
-}
+    extern void rec_asr_init(void);
+    extern void time_sync_int(void);
+    extern void wifi_station_init(void);
+   
+    wifi_station_init(); // 必须第一个运行
+    time_sync_int();
+    rec_asr_init();
+    
+    ESP_LOGI(TAG, "esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+ }
