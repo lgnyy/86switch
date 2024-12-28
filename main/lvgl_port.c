@@ -16,6 +16,8 @@
 
 static const char *TAG = "lvgl_port";
 static TaskHandle_t lvgl_task_handle = NULL;
+static esp_lcd_panel_handle_t lvgl_lcd_handle = NULL;
+static int64_t lvgl_touchpad_time = 0;
 
 
 void disp_flush(lv_display_t *disp_drv, const lv_area_t *area, uint8_t *px_map)
@@ -77,6 +79,10 @@ static void touchpad_read(lv_indev_t *indev, lv_indev_data_t *data)
         data->point.y = touchpad_y;
         data->state = LV_INDEV_STATE_PRESSED;
         ESP_LOGD(TAG, "Touch position: %d,%d", touchpad_x, touchpad_y);
+        if (lvgl_touchpad_time == 0){ // 从休眠中唤醒
+            esp_lcd_panel_disp_sleep(lvgl_lcd_handle, false);
+        }
+        lvgl_touchpad_time = esp_timer_get_time();
     } else {
         data->state = LV_INDEV_STATE_RELEASED;
     }
@@ -97,9 +103,13 @@ static lv_indev_t *indev_init(esp_lcd_touch_handle_t tp)
 static uint32_t tick_get_time(){
     return (uint32_t)(esp_timer_get_time() / 1000);
 } 
+static void tick_delay(uint32_t ms){
+    vTaskDelay(pdMS_TO_TICKS(ms));
+}
 static esp_err_t tick_init(void)
 {
     lv_tick_set_cb(tick_get_time); // xTaskGetTickCount
+    lv_delay_set_cb(tick_delay);
     return ESP_OK;
 }
 
@@ -109,12 +119,20 @@ static void lvgl_port_task(void *arg)
 
     uint32_t task_delay_ms = LVGL_PORT_TASK_MAX_DELAY_MS;
     while (1) {
-        task_delay_ms = lv_timer_handler();
-
-        if (task_delay_ms > LVGL_PORT_TASK_MAX_DELAY_MS) {
+        if (lvgl_touchpad_time == 0){ // 休眠中
             task_delay_ms = LVGL_PORT_TASK_MAX_DELAY_MS;
-        } else if (task_delay_ms < LVGL_PORT_TASK_MIN_DELAY_MS) {
-            task_delay_ms = LVGL_PORT_TASK_MIN_DELAY_MS;
+        }else{   
+            if ((esp_timer_get_time() - lvgl_touchpad_time) > 30000000){ // 30秒
+                lvgl_touchpad_time = 0; // 进入休眠状态
+                esp_lcd_panel_disp_sleep(lvgl_lcd_handle, true);
+            }
+            task_delay_ms = lv_timer_handler();
+
+            if (task_delay_ms > LVGL_PORT_TASK_MAX_DELAY_MS) {
+                task_delay_ms = LVGL_PORT_TASK_MAX_DELAY_MS;
+            } else if (task_delay_ms < LVGL_PORT_TASK_MIN_DELAY_MS) {
+                task_delay_ms = LVGL_PORT_TASK_MIN_DELAY_MS;
+            }
         }
         vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
     }
@@ -123,6 +141,7 @@ static void lvgl_port_task(void *arg)
 esp_err_t lvgl_port_init(esp_lcd_panel_handle_t lcd_handle, esp_lcd_touch_handle_t tp_handle)
 {
     lv_init();
+
     ESP_ERROR_CHECK(tick_init());
 
     lv_disp_t *disp = display_init(lcd_handle);
@@ -133,8 +152,16 @@ esp_err_t lvgl_port_init(esp_lcd_panel_handle_t lcd_handle, esp_lcd_touch_handle
         assert(indev);
     }
 
-    extern void lv_demo_widgets(void); // TODO
+    lvgl_lcd_handle = lcd_handle;
+    lvgl_touchpad_time = esp_timer_get_time();
+
+#if CONFIG_SWITCH86_UI_ENABLE
+    extern void ui_main(void);
+    ui_main();
+#else
+    extern void lv_demo_widgets(void); 
     lv_demo_widgets();
+#endif
 
     ESP_LOGI(TAG, "Create LVGL task");
     BaseType_t core_id = (LVGL_PORT_TASK_CORE < 0) ? tskNO_AFFINITY : LVGL_PORT_TASK_CORE;

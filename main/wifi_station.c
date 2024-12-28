@@ -6,8 +6,6 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
-//#include "lwip/err.h"
-//#include "lwip/sys.h"
 #include "nvs_cfg.h"
 
 
@@ -110,26 +108,8 @@ static int wifi_load_config(void* ctx, nvs_cfg_read_cb_t read_cb, void* arg){
     return read_cb(arg, "wifi_passwd", (char*)(sta->password), sizeof(sta->password));
 }
 
-static int wifi_save_config(void* ctx, nvs_cfg_write_cb_t write_cb, void* arg){
-    wifi_sta_config_t* sta = (wifi_sta_config_t*)ctx;
-    write_cb(arg, "wifi_ssid", (const char*)(sta->ssid));
-    return write_cb(arg, "wifi_passwd", (const char*)(sta->password));
-}
 
-
-#if CONFIG_SWITCH86_TEMPORARY_ENABLE
-#include "xmiot_account.h"
-#include "xmiot_service.h"
-static int xmiot_save_config(void* ctx, nvs_cfg_write_cb_t write_cb, void* arg){
-    int ret = xmiot_account_login_auth(NULL, SWITCH86_TEMPORARY_MIOT_USERNAME, SWITCH86_TEMPORARY_MIOT_PASSWORD, write_cb, arg);
-    ESP_LOGW(TAG, "xmiot_account_login_auth ret:%d", ret);
-    ret = xmiot_service_get_speaker_did(ctx, write_cb, arg);
-    ESP_LOGW(TAG, "xmiot_service_get_speaker_did ret:%d", ret);
-    return ret;
-}
-#endif
-
-void wifi_station_init(void)
+esp_err_t wifi_station_init(void)
 {
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     
@@ -149,27 +129,11 @@ void wifi_station_init(void)
     };
 
     // 加载wifi配置
-    int ret = nvs_cfg_load_wifi(wifi_load_config, &(wifi_config.sta));
+    int ret = nvs_cfg_load(NVS_CFG_WIFI_INFO_NAMESPACE, wifi_load_config, &(wifi_config.sta));
     if (ret != 0){
         ESP_LOGW(TAG, "nvs_cfg_load_wifi ret:%d", ret);
-#if CONFIG_SWITCH86_TEMPORARY_ENABLE
-        strcpy((char*)(wifi_config.sta.ssid), SWITCH86_TEMPORARY_WIFI_SSID);
-        strcpy((char*)(wifi_config.sta.password), SWITCH86_TEMPORARY_WIFI_PASSWORD);
-        ESP_ERROR_CHECK(nvs_cfg_save_wifi(wifi_save_config, &(wifi_config.sta)));
-#else
-        return;
-#endif
     }
 
-    if (wifi_init_sta(&wifi_config) == ESP_OK){
-#if CONFIG_SWITCH86_TEMPORARY_ENABLE
-        void* ctx = xmiot_service_context_create();
-        ret = nvs_cfg_load_xmiot(xmiot_service_load_config, ctx);
-        if (ret != 0){
-            ESP_LOGW(TAG, "nvs_cfg_load_xmiot ret:%d", ret);
-            nvs_cfg_save_xmiot(xmiot_save_config, ctx);
-            xmiot_service_context_destory(ctx);
-        }
-#endif
-    }
+    ret = wifi_init_sta(&wifi_config);
+    return ret;
 }

@@ -1,7 +1,7 @@
 dependencies:
   idf:
     version: ">=5.1.0"
-
+    
   lvgl/lvgl:
     version: ">=9"
     public: true
@@ -18,7 +18,10 @@ dependencies:
     version: "*"
     public: true
 
-  esp_websocket_client: "^1.1.0"
+  espressif/esp_websocket_client: "^1.1.0"
+
+  zlib:
+    version: "^1.3.0"
   
   lgnyy/libfvad:
     path: "libfvad"

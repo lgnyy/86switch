@@ -102,36 +102,43 @@ menu "Switch86 Configuration"
                 Set ASR websocket service address.
     endmenu
 
-   menu "Temporary Configuration"
-        config SWITCH86_TEMPORARY_ENABLE
-            bool "Enable Temporary Configuration"
-            default "n"
+   menu "UI Configuration"
+        config SWITCH86_UI_ENABLE
+            bool "Enable UI Configuration"
+            default "y"
             help
-                Enable this option if you wish to Temporary Configuration.
+                Enable this option if you wish to UI Configuration.
 
-        config SWITCH86_TEMPORARY_WIFI_SSID
-            depends on SWITCH86_TEMPORARY_ENABLE
+        config LV_USE_DEMO_WIDGETS
+            depends on !SWITCH86_UI_ENABLE
+            bool "USE DEMO WIDGETS"
+            default "y"
+            help
+                Please do not modify this configuration.
+
+        config SWITCH86_UI_OFF_WIFI_SSID
+            depends on !SWITCH86_UI_ENABLE
             string "WIFI SSID"
             default ""
             help
                 Set wifi ssid.
 
-        config SWITCH86_TEMPORARY_WIFI_PASSWORD
-            depends on SWITCH86_TEMPORARY_ENABLE
+        config SWITCH86_UI_OFF_WIFI_PASSWORD
+            depends on !SWITCH86_UI_ENABLE
             string "WIFI password"
             default ""
             help
                 Set wifi password.
 
-        config SWITCH86_TEMPORARY_MIOT_USERNAME
-            depends on SWITCH86_TEMPORARY_ENABLE
+        config SWITCH86_UI_OFF_MIOT_USERNAME
+            depends on !SWITCH86_UI_ENABLE
             string "MIOT username"
             default ""
             help
                 Set MIOT username.
 
-        config SWITCH86_TEMPORARY_MIOT_PASSWORD
-            depends on SWITCH86_TEMPORARY_ENABLE
+        config SWITCH86_UI_OFF_MIOT_PASSWORD
+            depends on !SWITCH86_UI_ENABLE
             string "MIOT password"
             default ""
             help

@@ -7,14 +7,13 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
-#include "nvs.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "esp_netif_sntp.h"
+#include "nvs_cfg.h"
 
 static const char *TAG = "time_sync";
 
-#define NVS_TIME_INFO_NAMESPACE "time_info"
 /* Timer interval once every day (24 Hours) */
 #define NVS_TIME_PERIOD (86400000000ULL)
 
@@ -48,39 +47,16 @@ static esp_err_t obtain_time(void)
 
 static esp_err_t fetch_and_store_time_in_nvs(void *args)
 {
-    nvs_handle_t my_handle = 0;
-    esp_err_t err;
-
     initialize_sntp();
-    if (obtain_time() != ESP_OK) {
-        err = ESP_FAIL;
-        goto exit;
+
+    esp_err_t err = obtain_time();
+    if (err == ESP_OK){
+        time_t now;
+        time(&now);
+
+        err = nvs_cfg_save_time(now);
     }
 
-    time_t now;
-    time(&now);
-
-    //Open
-    err = nvs_open(NVS_TIME_INFO_NAMESPACE, NVS_READWRITE, &my_handle);
-    if (err != ESP_OK) {
-        goto exit;
-    }
-
-    //Write
-    err = nvs_set_i64(my_handle, "timestamp", now);
-    if (err != ESP_OK) {
-        goto exit;
-    }
-
-    err = nvs_commit(my_handle);
-    if (err != ESP_OK) {
-        goto exit;
-    }
-
-exit:
-    if (my_handle != 0) {
-        nvs_close(my_handle);
-    }
     esp_netif_sntp_deinit();
 
     if (err != ESP_OK) {
@@ -93,40 +69,22 @@ exit:
 
 static esp_err_t update_time_from_nvs(void)
 {
-    nvs_handle_t my_handle = 0;
-    esp_err_t err;
-
-    err = nvs_open(NVS_TIME_INFO_NAMESPACE, NVS_READWRITE, &my_handle);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error opening NVS");
-        goto exit;
-    }
-
     int64_t timestamp = 0;
-
-    err = nvs_get_i64(my_handle, "timestamp", &timestamp);
-    if (err == ESP_ERR_NVS_NOT_FOUND) {
+    esp_err_t err = nvs_cfg_load_time(&timestamp);
+    if (err != ESP_OK) { // ESP_ERR_NVS_NOT_FOUND
         ESP_LOGI(TAG, "Time not found in NVS. Syncing time from SNTP server.");
-        if (fetch_and_store_time_in_nvs(NULL) != ESP_OK) {
-            err = ESP_FAIL;
-        } else {
-            err = ESP_OK;
-        }
-    } else if (err == ESP_OK) {
+        err = fetch_and_store_time_in_nvs(NULL);
+    } else {
         struct timeval get_nvs_time;
         get_nvs_time.tv_sec = timestamp;
         settimeofday(&get_nvs_time, NULL);
     }
 
-exit:
-    if (my_handle != 0) {
-        nvs_close(my_handle);
-    }
     return err;
 }
 
 
-void time_sync_int(void)
+esp_err_t time_sync_init(void)
 {
     if (esp_reset_reason() == ESP_RST_POWERON) {
         ESP_LOGI(TAG, "Updating time from NVS");
@@ -140,4 +98,5 @@ void time_sync_int(void)
     esp_timer_handle_t nvs_update_timer;
     ESP_ERROR_CHECK(esp_timer_create(&nvs_update_timer_args, &nvs_update_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(nvs_update_timer, NVS_TIME_PERIOD));
+    return ESP_OK;
 }

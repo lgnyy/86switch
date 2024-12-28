@@ -16,8 +16,6 @@
 static const char *TAG = "REC_ASR";
 
 
-
-
 // 用新任务执行音箱命令
 static void send_speaker_cmd_task(void *pvParameters)
 {
@@ -25,7 +23,7 @@ static void send_speaker_cmd_task(void *pvParameters)
 
     void* ctx = xmiot_service_context_create();
     if (ctx != NULL){
-        if (nvs_cfg_load_xmiot(xmiot_service_load_config, ctx) == 0){
+        if (nvs_cfg_load(NVS_CFG_XMIOT_INFO_NAMESPACE, xmiot_service_load_config, ctx) == 0){
 
             xmiot_service_send_speaker_cmd(ctx, cmd);
         }
@@ -209,13 +207,34 @@ static void rec_asr_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
+#if !CONFIG_SWITCH86_UI_ENABLE
+#include "xmiot_account.h"
+static int xmiot_save_config(void* ctx, nvs_cfg_write_cb_t write_cb, void* arg){
+    int ret = xmiot_account_login_auth(NULL, SWITCH86_TEMPORARY_MIOT_USERNAME, SWITCH86_TEMPORARY_MIOT_PASSWORD, write_cb, arg);
+    ESP_LOGW(TAG, "xmiot_account_login_auth ret:%d", ret);
+    ret = xmiot_service_get_speaker_did(ctx, write_cb, arg);
+    ESP_LOGW(TAG, "xmiot_service_get_speaker_did ret:%d", ret);
+    return ret;
+}
+#endif
+
 // 录音和语音识别初始化
-void rec_asr_init(void)
+esp_err_t rec_asr_init(void)
 {
+ #if !CONFIG_SWITCH86_UI_ENABLE // 无UI，根据配置登录小米云服务，并保存token等
+    void* ctx = xmiot_service_context_create();
+    if (nvs_cfg_load(NVS_CFG_XMIOT_INFO_NAMESPACE, xmiot_service_load_config, ctx) != 0){
+        ESP_LOGW(TAG, "nvs_cfg_load(xmiot) ret:%d", ret);
+        nvs_cfg_save(NVS_CFG_XMIOT_INFO_NAMESPACE, xmiot_save_config, ctx);
+        xmiot_service_context_destory(ctx);
+    }
+ #endif
+
     i2s_chan_handle_t rx_handle = init_microphone();
 
     ESP_LOGI(TAG, "Create REC ASR task");
     xTaskCreate(&rec_asr_task, "rec_asr_task", 8192, rx_handle, 5, NULL);
+    return ESP_OK;
 }
 
 #endif

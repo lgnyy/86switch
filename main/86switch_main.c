@@ -242,7 +242,9 @@ static esp_lcd_touch_handle_t _touch_init(void)
 void app_main()
 {
     ESP_LOGI(TAG, "esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
- 
+
+    ESP_ERROR_CHECK(nvs_cfg_init());
+
     if (SWITCH86_PIN_NUM_BK_LIGHT >= 0) {
         ESP_LOGI(TAG, "Turn off LCD backlight");
         gpio_config_t bk_gpio_config = {
@@ -263,14 +265,13 @@ void app_main()
         gpio_set_level(SWITCH86_PIN_NUM_BK_LIGHT, SWITCH86_LCD_BK_LIGHT_ON_LEVEL);
     }
 
-    ESP_ERROR_CHECK(nvs_cfg_init());
 
-    extern void rec_asr_init(void);
-    extern void time_sync_int(void);
-    extern void wifi_station_init(void);
+    extern esp_err_t rec_asr_init(void);
+    extern esp_err_t time_sync_init(void);
+    extern esp_err_t wifi_station_init(void);
    
-    wifi_station_init(); // 必须第一个运行
-    time_sync_int();
+    wifi_station_init(); // 必须第一个运行   
+    time_sync_init();
     rec_asr_init();
     
     ESP_LOGI(TAG, "esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
