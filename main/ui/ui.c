@@ -158,13 +158,7 @@ const lv_img_dsc_t *ui_imgset_cut4_[2] = {&ui_img_s4_cut4_1_png, &ui_img_s4_cut4
 const lv_img_dsc_t *ui_imgset_mode[2] = {&ui_img_s4_mode1_png, &ui_img_s4_mode2_png};
 const lv_img_dsc_t *ui_imgset_cut5_[2] = {&ui_img_s5_cut5_1_png, &ui_img_s5_cut5_2_png};
 
-///////////////////// TEST LVGL SETTINGS ////////////////////
-#if LV_COLOR_DEPTH != 16
-    #error "LV_COLOR_DEPTH should be 16bit to match SquareLine Studio's settings"
-#endif
-#if LV_COLOR_16_SWAP !=0
-    #error "LV_COLOR_16_SWAP should be 0 to match SquareLine Studio's settings"
-#endif
+
 
 ///////////////////// ANIMATIONS ////////////////////
 

@@ -221,7 +221,7 @@ lv_obj_set_style_text_opa(ui_Label11, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_text_font(ui_Label11, &ui_font_Font3, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_Image47 = lv_img_create(ui_Screen11);
-lv_img_set_src(ui_Image47, &ui_img_s4_cut4_1_png);
+lv_img_set_src(ui_Image47, &ui_img_s3_cut3_2_png);
 lv_obj_set_width( ui_Image47, LV_SIZE_CONTENT);  /// 10
 lv_obj_set_height( ui_Image47, LV_SIZE_CONTENT);   /// 10
 lv_obj_set_x( ui_Image47, -60 );
@@ -231,7 +231,7 @@ lv_obj_add_flag( ui_Image47, LV_OBJ_FLAG_ADV_HITTEST );   /// Flags
 lv_obj_clear_flag( ui_Image47, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
 
 ui_Image48 = lv_img_create(ui_Screen11);
-lv_img_set_src(ui_Image48, &ui_img_s4_cut4_1_png);
+lv_img_set_src(ui_Image48, &ui_img_s3_cut3_2_png);
 lv_obj_set_width( ui_Image48, LV_SIZE_CONTENT);  /// 10
 lv_obj_set_height( ui_Image48, LV_SIZE_CONTENT);   /// 10
 lv_obj_set_x( ui_Image48, 30 );
@@ -241,7 +241,7 @@ lv_obj_add_flag( ui_Image48, LV_OBJ_FLAG_ADV_HITTEST );   /// Flags
 lv_obj_clear_flag( ui_Image48, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
 
 ui_Image49 = lv_img_create(ui_Screen11);
-lv_img_set_src(ui_Image49, &ui_img_s4_cut4_1_png);
+lv_img_set_src(ui_Image49, &ui_img_s3_cut3_2_png);
 lv_obj_set_width( ui_Image49, LV_SIZE_CONTENT);  /// 10
 lv_obj_set_height( ui_Image49, LV_SIZE_CONTENT);   /// 10
 lv_obj_set_x( ui_Image49, 60 );
@@ -251,7 +251,7 @@ lv_obj_add_flag( ui_Image49, LV_OBJ_FLAG_ADV_HITTEST );   /// Flags
 lv_obj_clear_flag( ui_Image49, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
 
 ui_Image50 = lv_img_create(ui_Screen11);
-lv_img_set_src(ui_Image50, &ui_img_s4_cut4_1_png);
+lv_img_set_src(ui_Image50, &ui_img_s3_cut3_2_png);
 lv_obj_set_width( ui_Image50, LV_SIZE_CONTENT);  /// 10
 lv_obj_set_height( ui_Image50, LV_SIZE_CONTENT);   /// 10
 lv_obj_set_x( ui_Image50, -30 );
@@ -261,7 +261,7 @@ lv_obj_add_flag( ui_Image50, LV_OBJ_FLAG_ADV_HITTEST );   /// Flags
 lv_obj_clear_flag( ui_Image50, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
 
 ui_Image51 = lv_img_create(ui_Screen11);
-lv_img_set_src(ui_Image51, &ui_img_s4_cut4_2_png);
+lv_img_set_src(ui_Image51, &ui_img_s3_cut3_1_png);
 lv_obj_set_width( ui_Image51, LV_SIZE_CONTENT);  /// 10
 lv_obj_set_height( ui_Image51, LV_SIZE_CONTENT);   /// 10
 lv_obj_set_x( ui_Image51, 0 );
