@@ -70,6 +70,7 @@
 #endif
 
 static const char *TAG = "switch86";
+static esp_lcd_panel_handle_t _lcd_handle = NULL;
 
 
 static const st7701_lcd_init_cmd_t _lcd_init_cmds[] = {
@@ -156,14 +157,26 @@ static esp_lcd_panel_handle_t _lcd_init(void)
             SWITCH86_LCD_IO_RGB_DATA14,
             SWITCH86_LCD_IO_RGB_DATA15,
         },
-        .timings = ST7701_480_480_PANEL_60HZ_RGB_TIMING(),
+        //.timings = ST7701_480_480_PANEL_60HZ_RGB_TIMING(),
+        .timings = { 
+            .pclk_hz = SWITCH86_LCD_PCLK_HZ,
+            .h_res = SWITCH86_LCD_H_RES, 
+            .v_res = SWITCH86_LCD_V_RES, 
+            .hsync_pulse_width = 8, 
+            .hsync_back_porch = 50,
+            .hsync_front_porch = 10, 
+            .vsync_pulse_width = 8,
+            .vsync_back_porch = 20, 
+            .vsync_front_porch = 10,
+            .flags.pclk_active_neg = false,
+        },
         .flags.fb_in_psram = 1,
         .num_fbs = LVGL_PORT_LCD_RGB_BUFFER_NUMS,
         .bounce_buffer_size_px = SWITCH86_RGB_BOUNCE_BUFFER_SIZE,
     };
-	rgb_config.timings.pclk_hz = SWITCH86_LCD_PCLK_HZ;
-    rgb_config.timings.h_res = SWITCH86_LCD_H_RES;
-    rgb_config.timings.v_res = SWITCH86_LCD_V_RES;
+	//rgb_config.timings.pclk_hz = SWITCH86_LCD_PCLK_HZ;
+    //rgb_config.timings.h_res = SWITCH86_LCD_H_RES;
+    //rgb_config.timings.v_res = SWITCH86_LCD_V_RES;
     st7701_vendor_config_t vendor_config = {
         .rgb_config = &rgb_config,
         .init_cmds = _lcd_init_cmds,      // Uncomment these line if use custom initialization commands
@@ -238,10 +251,17 @@ static esp_lcd_touch_handle_t _touch_init(void)
     return tp_handle;
 }
 
+static void esp_lcd_sleep(bool sleep)
+{
+    ESP_LOGI(TAG, "sleep:%d", sleep);
+	//esp_lcd_panel_disp_sleep(_lcd_handle, false);
+	esp_lcd_panel_disp_on_off(_lcd_handle, !sleep);
+	gpio_set_level(SWITCH86_PIN_NUM_BK_LIGHT, sleep? SWITCH86_LCD_BK_LIGHT_OFF_LEVEL : SWITCH86_LCD_BK_LIGHT_ON_LEVEL);
+}
 
 void app_main()
 {
-    ESP_LOGI(TAG, "esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+    ESP_LOGI(TAG, "begin esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
     ESP_ERROR_CHECK(nvs_cfg_init());
 
@@ -263,6 +283,9 @@ void app_main()
     if (SWITCH86_PIN_NUM_BK_LIGHT >= 0) {
         ESP_LOGI(TAG, "Turn on LCD backlight");
         gpio_set_level(SWITCH86_PIN_NUM_BK_LIGHT, SWITCH86_LCD_BK_LIGHT_ON_LEVEL);
+		
+		_lcd_handle = lcd_handle;
+		lvgl_port_set_lcd_sleep_cb(esp_lcd_sleep);
     }
 
 
@@ -274,5 +297,5 @@ void app_main()
     time_sync_init();
     rec_asr_init();
     
-    ESP_LOGI(TAG, "esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+    ESP_LOGI(TAG, "end esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
  }

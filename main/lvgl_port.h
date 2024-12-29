@@ -72,6 +72,9 @@ extern "C" {
 esp_err_t lvgl_port_init(esp_lcd_panel_handle_t lcd_handle, esp_lcd_touch_handle_t tp_handle);
 
 
+void lvgl_port_set_lcd_sleep_cb(void (*sleep_cb)(bool sleep));
+
+
 #ifdef __cplusplus
 }
 #endif
