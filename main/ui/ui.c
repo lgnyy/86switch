@@ -309,5 +309,5 @@ ui_Screen11_screen_init();
 ui_Screen12_screen_init();
 ui_Screen13_screen_init();
 ui____initial_actions0 = lv_obj_create(NULL);
-lv_disp_load_scr( ui_Screen2);
+//lv_disp_load_scr( ui_Screen2);
 }
