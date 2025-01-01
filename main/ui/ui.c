@@ -53,11 +53,11 @@ void ui_event_screen_x(lv_event_t* e)
     lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active());
     if (dir == LV_DIR_LEFT) {
         lv_indev_wait_release(lv_indev_active());
-        ui_screen_change((index == 0) ? 4 : (index - 1));
+        ui_screen_change((index == 4) ? 0 : (index + 1));
     }
     else if (dir == LV_DIR_RIGHT) {
-        lv_indev_wait_release(lv_indev_get_act());
-        ui_screen_change((index == 4) ? 0 : (index + 1));
+        lv_indev_wait_release(lv_indev_active());
+        ui_screen_change((index == 0) ? 4 : (index - 1));
     }
 }
 
