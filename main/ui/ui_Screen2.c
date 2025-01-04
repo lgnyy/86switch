@@ -96,7 +96,7 @@ void ui_Screen2_set_options_text(const char* options, const char* text, bool fin
 {
     lv_obj_t* ui_Screen2 = ui_screen_get(_UI_SCREEN_INDEX);
     if (options != NULL) {
-        lv_obj_t* ui_Dropdown2 = lv_obj_get_child(ui_Screen2, 2);
+        lv_obj_t* ui_Dropdown2 = lv_obj_get_child_by_type(ui_Screen2, 0, &lv_dropdown_class);
         lv_dropdown_set_options(ui_Dropdown2, options);
     }
     if (text != NULL) {
@@ -125,7 +125,7 @@ static void ui_event_Key_Ok(lv_event_t* e)
     {
         lv_obj_t* ui_Screen2 = ui_screen_get(_UI_SCREEN_INDEX);
         lv_obj_t* ui_Label12 = lv_event_get_user_data(e);
-        lv_obj_t* ui_Dropdown2 = lv_obj_get_child(ui_Screen2, 2);
+        lv_obj_t* ui_Dropdown2 = lv_obj_get_child_by_type(ui_Screen2, 0, &lv_dropdown_class);
         lv_obj_add_flag(_ui_Button2, LV_OBJ_FLAG_HIDDEN);
         lv_label_set_text(ui_Label12, "Connect...");
         lv_obj_remove_state(ui_TextArea1, LV_STATE_FOCUSED);
