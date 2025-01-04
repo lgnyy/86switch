@@ -11,10 +11,28 @@ extern "C" {
 
 #define UI_NO_FEEDBACK_MODE 1
 
-// SCREEN: ui_Screen2
+// SCREEN: ui_Screen2(ui_ScreenC1)
 lv_obj_t* ui_Screen2_screen_init(void);
 void ui_Screen2_set_command_cb(void (*command_cb)(const char* ssid, const char* pswd));
 void ui_Screen2_set_options_text(const char* options, const char* text, bool finish);
+
+#define ui_ScreenC1_screen_init ui_Screen2_screen_init
+#define ui_ScreenC1_set_command_cb ui_Screen2_set_command_cb
+#define ui_ScreenC1_set_options_text ui_Screen2_set_options_text
+
+// SCREEN: ui_ScreenC2
+lv_obj_t* ui_ScreenC2_screen_init(void);
+void ui_ScreenC2_set_command_cb(void (*command_cb)(int op, const char* username, const char* passsword));
+void ui_ScreenC2_set_config_with_index(int32_t index, const char* value);
+void ui_ScreenC2_set_result(const char* result);
+
+// SCREEN: ui_ScreenC3
+lv_obj_t* ui_ScreenC3_screen_init(void);
+void ui_ScreenC3_set_command_cb(void (*command_cb)(const char* city_pos, const char* api_key));
+void ui_ScreenC3_set_config_with_index(int32_t index, const char* value);
+void ui_ScreenC3_set_result(const char* result);
+
+
 
 // SCREEN: ui_Screen1
 lv_obj_t* ui_Screen1_screen_init(void);
@@ -44,7 +62,7 @@ LV_FONT_DECLARE( ui_font_Font2);
 LV_FONT_DECLARE( ui_font_Font3);
 LV_FONT_DECLARE( ui_font_Font4);
 
-void ui_init(void);
+void ui_init(void (*load_cb)(int32_t index));
 lv_obj_t* ui_screen_get(int32_t index);
 void ui_screen_change(int32_t index);
 void ui_event_screen_x(lv_event_t* e);

@@ -9,8 +9,9 @@ LV_IMG_DECLARE(ui_img_s1_cut2_png);   // assets\s1\cut2.png
 
 
 ///////////////////// VARIABLES ////////////////////
+static void (*ui_screen_load_cb)(int32_t index);
 static lv_obj_t* ui_screen_page_list[5];
-static lv_obj_t* ui_screen_config_list[3];
+static lv_obj_t* ui_screen_config_list[3] = { NULL, NULL, NULL };
 
 
 ///////////////////// ANIMATIONS ////////////////////
@@ -18,12 +19,13 @@ static lv_obj_t* ui_screen_config_list[3];
 ///////////////////// FUNCTIONS ////////////////////
 ///////////////////// SCREENS ////////////////////
 
-void ui_init( void )
+void ui_init( void (*load_cb)(int32_t index) )
 {
     lv_disp_t *dispp = lv_display_get_default();
     lv_theme_t *theme = lv_theme_default_init(dispp, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_RED), true, LV_FONT_DEFAULT);
     lv_display_set_theme(dispp, theme);
     
+    ui_screen_load_cb = load_cb;
     ui_screen_page_list[0] = ui_Screen1_screen_init();
     ui_screen_page_list[1] = ui_Screen10_screen_init();
     ui_screen_page_list[2] = ui_Screen11_screen_init();
@@ -36,7 +38,9 @@ lv_obj_t* ui_screen_get(int32_t index)
     if (index < 0) {
         int32_t i = -1 - index;
         if (ui_screen_config_list[i] == NULL) {
-            ui_screen_config_list[i] = ui_Screen2_screen_init();
+            lv_obj_t* (*init_fun_list[3])(void) = { ui_ScreenC1_screen_init, ui_ScreenC2_screen_init, ui_ScreenC3_screen_init };
+            ui_screen_config_list[i] = init_fun_list[i]();
+            ui_screen_load_cb(index);
         }
         return ui_screen_config_list[i];
     }

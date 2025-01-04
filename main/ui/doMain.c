@@ -52,42 +52,65 @@ static const char* scene_command_list[] = {"", SCENE1_NAME, SCENE2_NAME, SCENE3_
 
 
 static bool cmd_task_status = false;
-static lv_thread_t threadWeather, threadWifi, threadCmd;
+static lv_thread_t threadWeatherFirst, threadWeather, threadWifi, threadCmd;
 
+static char* merge_two_strings(const char* s1, const char* s2);
+static void ui_load_cb(int32_t index);
+static int weather_load_config(void* ctx, nvs_cfg_read_cb_t read_cb, void* arg);
 static void wifi_command(const char* ssid, const char* pswd);
+static void miot_command(int op, const char* username, const char* passsword);
+static void weather_command(const char* city_pos, const char* api_key);
 static void lightp_command(int32_t index, int32_t lightp, int32_t colorp);
 static void light_command(int32_t index, bool on);
 static void scene_command(int32_t index, bool on);
 static void updateTime(lv_timer_t* timer);
+static int updateWeather(void* arg, int index, const char* value);
 static void getWeather(void* pvParameters);
 static void sendCommand(const char* cmd);
 
 
 void ui_main(void)
 {
-    ui_init();
+    ui_ScreenC1_set_command_cb(wifi_command);
+    ui_ScreenC2_set_command_cb(miot_command);
+    ui_ScreenC3_set_command_cb(weather_command);
+
+    ui_Screen10_set_command_cb(lightp_command);
+    ui_Screen11_set_command_cb(light_command);
+    ui_Screen12_set_command_cb(scene_command);
+
+    ui_init(ui_load_cb);
 
     int32_t index = (nvs_cfg_check(NVS_CFG_WIFI_INFO_NAMESPACE) == 0) ? 0 : -1;
     lv_screen_load(ui_screen_get(index));
 
-    do_main_ui_init();
-}
-
-void do_main_ui_init(void)
-{
-    ui_Screen2_set_command_cb(wifi_command);
- 
-    ui_Screen10_set_command_cb(lightp_command);
-    ui_Screen11_set_command_cb(light_command);
-    ui_Screen12_set_command_cb(scene_command);
-   
     lv_timer_create(updateTime, 1000, NULL);
     if (nvs_cfg_check(NVS_CFG_WIFI_INFO_NAMESPACE) == 0) {
         lv_thread_init(&threadWeather, LV_THREAD_PRIO_LOW, getWeather, 4096, NULL);
-   }
-    else {
-        lv_thread_init(&threadWifi, LV_THREAD_PRIO_MID, scan_wifi_task, 4096, NULL);
     }
+    else {
+        lv_thread_init(&threadWifi, LV_THREAD_PRIO_MID, wifi_scan_task, 4096, NULL);
+    }
+}
+
+static void ui_load_cb(int32_t index)
+{
+    if (index == -2) {
+
+    }
+    else if (index == -3) {
+        nvs_cfg_load(NVS_CFG_WEATHER_INFO_NAMESPACE, weather_load_config, NULL);
+    }
+}
+static int weather_load_config(void* ctx, nvs_cfg_read_cb_t read_cb, void* arg) {
+    const char** keys = weather_get_config_keys();
+    char value[64];
+    for (int i = 0; keys[i]; i++) {
+        if (read_cb(arg, keys[i], value, sizeof(value)) == 0) {
+            ui_ScreenC3_set_config_with_index(i, value);
+        }
+    }
+    return 0;
 }
 
 static void lightp_command(int32_t index, int32_t lightp, int32_t colorp)
@@ -114,27 +137,34 @@ static void scene_command(int32_t index, bool on)
 }
 
 
+static char* merge_two_strings(const char* s1, const char* s2)
+{
+    size_t len1 = strlen(s1) + 1;
+    size_t len2 = strlen(s2) + 1;
+    char* ss = (char*)malloc(len1 + len2);
+    if (ss != NULL) {
+        memcpy(ss, s1, len1);
+        memcpy(ss + len1, s2, len2);
+    }
+    return ss;
+}
+
 static void wifi_command(const char* ssid, const char* pswd)
 {
     if ((ssid == NULL) || (pswd == NULL)) {
-        lv_thread_init(&threadWifi, LV_THREAD_PRIO_MID, scan_wifi_task, 4096, NULL);
+        lv_thread_init(&threadWifi, LV_THREAD_PRIO_MID, wifi_scan_task, 4096, NULL);
     }
     else {
-        size_t slen = strlen(ssid) + 1;
-        size_t plen = strlen(pswd) + 1;
-        char* ssid_pswd = (char*)malloc(slen + plen);
+        char* ssid_pswd = merge_two_strings(ssid, pswd);
         if (ssid_pswd == NULL) {
             return;
         }
-        memcpy(ssid_pswd, ssid, slen);
-        memcpy(ssid_pswd + slen, pswd, plen);
-       
-        lv_thread_init(&threadWifi, LV_THREAD_PRIO_MID, connect_wifi_task, 4096, ssid_pswd);
+
+        lv_thread_init(&threadWifi, LV_THREAD_PRIO_MID, wifi_connect_task, 4096, ssid_pswd);
     }
 }
 
-
-void scan_wifi_task(void *pvParameters)
+void wifi_scan_task(void *pvParameters)
 {
     lv_delay_ms(200);
 
@@ -142,11 +172,11 @@ void scan_wifi_task(void *pvParameters)
     wifi_station_scan(ssids, sizeof(ssids));
   
     lv_lock();
-    ui_Screen2_set_options_text(ssids, "请连接WiFi", false);
+    ui_ScreenC1_set_options_text(ssids, "请连接WiFi", false);
     lv_unlock();
 }
 
-void connect_wifi_task(void *pvParameters)
+void wifi_connect_task(void *pvParameters)
 {
     const char* ssid = (const char*)pvParameters;
     const char* pswd = ssid + strlen(ssid) + 1;
@@ -155,7 +185,7 @@ void connect_wifi_task(void *pvParameters)
     int ret = wifi_station_connect(ssid, pswd);
    
     lv_lock();
-    ui_Screen2_set_options_text(NULL, (ret == 0)? "Success" : "Failed", false);
+    ui_ScreenC1_set_options_text(NULL, (ret == 0)? "Success" : "Failed", false);
     lv_unlock();
 
     lv_delay_ms(1000);
@@ -169,12 +199,41 @@ void connect_wifi_task(void *pvParameters)
     }
     else {
         lv_lock();
-        ui_Screen2_set_options_text(NULL, "请连接WiFi", true);
+        ui_ScreenC1_set_options_text(NULL, "请连接WiFi", true);
         lv_unlock();
     }
 
     free(pvParameters);
 }
+
+
+static void miot_command(int op, const char* username, const char* passsword)
+{
+
+}
+
+
+void weather_query_task(void* pvParameters)
+{
+    int ret = weather_query_first((char*)pvParameters, updateWeather, NULL);
+
+    lv_lock();
+    ui_ScreenC3_set_result((ret == 0) ? "Success" : "Failed");
+    lv_unlock();
+
+    free(pvParameters);
+}
+
+static void weather_command(const char* city_pos, const char* api_key)
+{
+    char* pos_key = merge_two_strings(city_pos, api_key);
+    if (pos_key == NULL) {
+        return;
+    }
+
+    lv_thread_init(&threadWeatherFirst, LV_THREAD_PRIO_MID, weather_query_task, 4096, pos_key);
+}
+
 
 static void updateTime(lv_timer_t* timer)
 {

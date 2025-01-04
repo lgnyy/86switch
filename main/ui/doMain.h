@@ -3,9 +3,9 @@
 
 void ui_main(void);
 
-void do_main_ui_init(void);
 
-void scan_wifi_task(void *pvParameters);
+void wifi_scan_task(void *pvParameters);
 
-void connect_wifi_task(void *pvParameters);
+void wifi_connect_task(void* pvParameters);
 
+void weather_query_task(void* pvParameters);
