@@ -9,6 +9,7 @@ extern "C" {
 
     #include "lvgl.h"
 
+#define UI_NO_FEEDBACK_MODE 1
 
 // SCREEN: ui_Screen2
 lv_obj_t* ui_Screen2_screen_init(void);
@@ -26,11 +27,12 @@ void ui_Screen10_set_command_cb(void (*command_cb)(int32_t index, int32_t lightp
 
 // SCREEN: ui_Screen11
 lv_obj_t* ui_Screen11_screen_init(void);
-void ui_Screen11_set_command_cb(void (*commandt_cb)(int32_t index, bool on));
+void ui_Screen11_set_command_cb(void (*command_cb)(int32_t index, bool on));
 
 
 // SCREEN: ui_Screen12
 lv_obj_t* ui_Screen12_screen_init(void);
+void ui_Screen12_set_command_cb(void (*command_cb)(int32_t index, bool on));
 
 // SCREEN: ui_Screen13
 lv_obj_t* ui_Screen13_screen_init(void);

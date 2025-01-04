@@ -18,6 +18,22 @@
 #define LIGHT1_NAME "筒灯"
 #define LIGHT2_NAME "吸顶灯"
 #define LIGHT3_NAME "灯带"
+#define SCENE1_NAME "睡眠"
+#define SCENE2_NAME "会客"
+#define SCENE3_NAME "明亮"
+#define SCENE4_NAME "观影"
+
+
+static const char* lightp_on_command_list[] = {
+    "",
+    "",
+    COMMAND_ON ROOM_NAME LIGHT0_NAME ",把亮度调到%ld，把色温调到%ld。",
+};
+static const char* lightp_off_command_list[] = {
+    COMMAND_OFF LIGHT_ALL_NAME,
+    COMMAND_OFF ROOM_NAME LIGHT_ALL_NAME,
+    COMMAND_OFF ROOM_NAME LIGHT0_NAME,
+};
 
 static const char* light_on_command_list[] = {
     COMMAND_ON ROOM_NAME LIGHT_ALL_NAME,
@@ -32,12 +48,16 @@ static const char* light_off_command_list[] = {
     COMMAND_OFF ROOM_NAME LIGHT3_NAME,
 };
 
+static const char* scene_command_list[] = {"", SCENE1_NAME, SCENE2_NAME, SCENE3_NAME, SCENE4_NAME};
+
+
 static bool cmd_task_status = false;
 static lv_thread_t threadWeather, threadWifi, threadCmd;
 
 static void wifi_command(const char* ssid, const char* pswd);
 static void lightp_command(int32_t index, int32_t lightp, int32_t colorp);
 static void light_command(int32_t index, bool on);
+static void scene_command(int32_t index, bool on);
 static void updateTime(lv_timer_t* timer);
 static void getWeather(void* pvParameters);
 static void sendCommand(const char* cmd);
@@ -56,11 +76,11 @@ void ui_main(void)
 void do_main_ui_init(void)
 {
     ui_Screen2_set_command_cb(wifi_command);
-
+ 
     ui_Screen10_set_command_cb(lightp_command);
-
     ui_Screen11_set_command_cb(light_command);
-
+    ui_Screen12_set_command_cb(scene_command);
+   
     lv_timer_create(updateTime, 1000, NULL);
     if (nvs_cfg_check(NVS_CFG_WIFI_INFO_NAMESPACE) == 0) {
         lv_thread_init(&threadWeather, LV_THREAD_PRIO_LOW, getWeather, 4096, NULL);
@@ -74,18 +94,23 @@ static void lightp_command(int32_t index, int32_t lightp, int32_t colorp)
 {
     if (lightp > 0) {
         char cmd[256];
-        const char* fmt = COMMAND_ON ROOM_NAME LIGHT0_NAME ",把亮度调到%ld，把色温调到%ld。";
+        const char* fmt = lightp_on_command_list[1 + index];
         snprintf(cmd, sizeof(cmd), fmt, lightp, 1700 + 48 * colorp);
         sendCommand(cmd);
     }
     else {
-        sendCommand(COMMAND_OFF ROOM_NAME LIGHT0_NAME);
+        sendCommand(lightp_off_command_list[1 + index]);
     }
 }
 
 static void light_command(int32_t index, bool on)
 {
     sendCommand(on? light_on_command_list[index] : light_off_command_list[index]);
+}
+
+static void scene_command(int32_t index, bool on)
+{
+    sendCommand(scene_command_list[index]);
 }
 
 
