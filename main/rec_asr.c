@@ -67,6 +67,9 @@ static void asr_result_process(const char* data_ptr, int data_len)
 
                     send_speaker_cmd(startptr+6, clen-6);
                 }
+                else if((memcmp(startptr, "打开", 6) == 0) || (memcmp(startptr, "关闭", 6) == 0)){
+                    send_speaker_cmd(startptr, clen);
+                }
             }
         }
     }
