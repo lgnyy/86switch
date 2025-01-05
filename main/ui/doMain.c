@@ -51,13 +51,13 @@ static const char* light_off_command_list[] = {
 static const char* scene_command_list[] = {"", SCENE1_NAME, SCENE2_NAME, SCENE3_NAME, SCENE4_NAME};
 
 
+static bool weather_task_status = false;
 static bool cmd_task_status = false;
-static lv_thread_t threadWeatherFirst, threadWeather, threadWifi, threadCmd;
+static lv_thread_t threadConfig, threadWeather, threadCmd;
 
 static char* merge_two_strings(const char* s1, const char* s2);
 static void ui_load_cb(int32_t index);
-static int weather_load_config(void* ctx, nvs_cfg_read_cb_t read_cb, void* arg);
-static void wifi_command(const char* ssid, const char* pswd);
+static void wifi_command(int op, const char* ssid, const char* pswd);
 static void miot_command(int op, const char* username, const char* passsword);
 static void weather_command(const char* city_pos, const char* api_key);
 static void lightp_command(int32_t index, int32_t lightp, int32_t colorp);
@@ -86,31 +86,36 @@ void ui_main(void)
 
     lv_timer_create(updateTime, 1000, NULL);
     if (nvs_cfg_check(NVS_CFG_WIFI_INFO_NAMESPACE) == 0) {
+        weather_task_status = true;
         lv_thread_init(&threadWeather, LV_THREAD_PRIO_LOW, getWeather, 4096, NULL);
     }
-    else {
-        lv_thread_init(&threadWifi, LV_THREAD_PRIO_MID, wifi_scan_task, 4096, NULL);
-    }
 }
 
-static void ui_load_cb(int32_t index)
-{
-    if (index == -2) {
-
-    }
-    else if (index == -3) {
-        nvs_cfg_load(NVS_CFG_WEATHER_INFO_NAMESPACE, weather_load_config, NULL);
-    }
-}
-static int weather_load_config(void* ctx, nvs_cfg_read_cb_t read_cb, void* arg) {
-    const char** keys = weather_get_config_keys();
+typedef struct __temp_load_context_t {
+    const char** keys;
+    void (*set_config_with_index)(int32_t index, const char* value);
+}_temp_load_context_t;
+static int load_config_cb(void* ctx_, nvs_cfg_read_cb_t read_cb, void* arg) {
+    _temp_load_context_t* ctx = (_temp_load_context_t*)ctx_;
+    const char** keys = ctx->keys;
     char value[64];
     for (int i = 0; keys[i]; i++) {
         if (read_cb(arg, keys[i], value, sizeof(value)) == 0) {
-            ui_ScreenC3_set_config_with_index(i, value);
+            ctx->set_config_with_index(i, value);
         }
     }
     return 0;
+}
+static void ui_load_cb(int32_t index)
+{
+    if (index == -2) {
+        _temp_load_context_t ctx = { miot_get_ui_config_keys(), ui_ScreenC2_set_config_with_index };
+        nvs_cfg_load(NVS_CFG_XMIOT_INFO_NAMESPACE, load_config_cb, &ctx);
+    }
+    else if (index == -3) {
+        _temp_load_context_t ctx = { weather_get_config_keys(), ui_ScreenC3_set_config_with_index };
+        nvs_cfg_load(NVS_CFG_WEATHER_INFO_NAMESPACE, load_config_cb, &ctx);
+    }
 }
 
 static void lightp_command(int32_t index, int32_t lightp, int32_t colorp)
@@ -149,10 +154,10 @@ static char* merge_two_strings(const char* s1, const char* s2)
     return ss;
 }
 
-static void wifi_command(const char* ssid, const char* pswd)
+static void wifi_command(int op, const char* ssid, const char* pswd)
 {
-    if ((ssid == NULL) || (pswd == NULL)) {
-        lv_thread_init(&threadWifi, LV_THREAD_PRIO_MID, wifi_scan_task, 4096, NULL);
+    if (op == 1) {
+        lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, wifi_scan_task, 4096, NULL);
     }
     else {
         char* ssid_pswd = merge_two_strings(ssid, pswd);
@@ -160,7 +165,7 @@ static void wifi_command(const char* ssid, const char* pswd)
             return;
         }
 
-        lv_thread_init(&threadWifi, LV_THREAD_PRIO_MID, wifi_connect_task, 4096, ssid_pswd);
+        lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, wifi_connect_task, 4096, ssid_pswd);
     }
 }
 
@@ -172,7 +177,8 @@ void wifi_scan_task(void *pvParameters)
     wifi_station_scan(ssids, sizeof(ssids));
   
     lv_lock();
-    ui_ScreenC1_set_options_text(ssids, "请连接WiFi", false);
+    ui_ScreenC1_set_result(1, ssids);
+    ui_ScreenC1_set_result(0, "PLS Connect WiFi");
     lv_unlock();
 }
 
@@ -185,31 +191,64 @@ void wifi_connect_task(void *pvParameters)
     int ret = wifi_station_connect(ssid, pswd);
    
     lv_lock();
-    ui_ScreenC1_set_options_text(NULL, (ret == 0)? "Success" : "Failed", false);
+    ui_ScreenC1_set_result(0, (ret == 0)? "Success" : "Failed");
     lv_unlock();
 
-    lv_delay_ms(1000);
-
     if (ret == 0){
+        lv_delay_ms(1000);
         lv_lock();
         ui_screen_change(0);
         lv_unlock();
 
-        lv_thread_init(&threadWeather, LV_THREAD_PRIO_LOW, getWeather, 4096, NULL);
-    }
-    else {
-        lv_lock();
-        ui_ScreenC1_set_options_text(NULL, "请连接WiFi", true);
-        lv_unlock();
+        if (!weather_task_status) {
+            weather_task_status = true;
+            lv_thread_init(&threadWeather, LV_THREAD_PRIO_LOW, getWeather, 4096, NULL);
+        }
     }
 
     free(pvParameters);
 }
 
 
+void miot_login_task(void* pvParameters) 
+{
+    const char* username = (const char*)pvParameters;
+    const char* password = username + strlen(username) + 1;
+    int ret = miot_login(username, password);
+
+    lv_lock();
+    ui_ScreenC2_set_result(0, (ret == 0) ? "Success" : "Failed");
+    lv_unlock();
+
+    free(pvParameters);
+
+}
+
+void miot_query_task(void* pvParameters)
+{
+    int ret = miot_query_speaker_did();
+
+    lv_lock();
+    ui_ScreenC2_set_result(0, (ret == 0) ? "Success" : "Failed");
+    if (ret == 0) {
+        ui_load_cb(-2);
+    }
+    lv_unlock();
+}
+
 static void miot_command(int op, const char* username, const char* passsword)
 {
+    if (op == 1) {
+        char* name_pwd = merge_two_strings(username, passsword);
+        if (name_pwd == NULL) {
+            return;
+        }
 
+        lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, miot_login_task, 4096, name_pwd);
+    }
+    else {
+        lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, miot_query_task, 4096, NULL);
+    }
 }
 
 
@@ -218,7 +257,7 @@ void weather_query_task(void* pvParameters)
     int ret = weather_query_first((char*)pvParameters, updateWeather, NULL);
 
     lv_lock();
-    ui_ScreenC3_set_result((ret == 0) ? "Success" : "Failed");
+    ui_ScreenC3_set_result(0, (ret == 0) ? "Success" : "Failed");
     lv_unlock();
 
     free(pvParameters);
@@ -231,7 +270,7 @@ static void weather_command(const char* city_pos, const char* api_key)
         return;
     }
 
-    lv_thread_init(&threadWeatherFirst, LV_THREAD_PRIO_MID, weather_query_task, 4096, pos_key);
+    lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, weather_query_task, 4096, pos_key);
 }
 
 

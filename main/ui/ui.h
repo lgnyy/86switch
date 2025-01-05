@@ -13,24 +13,24 @@ extern "C" {
 
 // SCREEN: ui_Screen2(ui_ScreenC1)
 lv_obj_t* ui_Screen2_screen_init(void);
-void ui_Screen2_set_command_cb(void (*command_cb)(const char* ssid, const char* pswd));
-void ui_Screen2_set_options_text(const char* options, const char* text, bool finish);
+void ui_Screen2_set_command_cb(void (*command_cb)(int op, const char* ssid, const char* pswd));
+void ui_Screen2_set_result(int32_t op, const char* result);
 
 #define ui_ScreenC1_screen_init ui_Screen2_screen_init
 #define ui_ScreenC1_set_command_cb ui_Screen2_set_command_cb
-#define ui_ScreenC1_set_options_text ui_Screen2_set_options_text
+#define ui_ScreenC1_set_result ui_Screen2_set_result
 
 // SCREEN: ui_ScreenC2
 lv_obj_t* ui_ScreenC2_screen_init(void);
 void ui_ScreenC2_set_command_cb(void (*command_cb)(int op, const char* username, const char* passsword));
 void ui_ScreenC2_set_config_with_index(int32_t index, const char* value);
-void ui_ScreenC2_set_result(const char* result);
+void ui_ScreenC2_set_result(int32_t op, const char* result);
 
 // SCREEN: ui_ScreenC3
 lv_obj_t* ui_ScreenC3_screen_init(void);
 void ui_ScreenC3_set_command_cb(void (*command_cb)(const char* city_pos, const char* api_key));
 void ui_ScreenC3_set_config_with_index(int32_t index, const char* value);
-void ui_ScreenC3_set_result(const char* result);
+void ui_ScreenC3_set_result(int32_t op, const char* result);
 
 
 
