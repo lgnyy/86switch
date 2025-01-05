@@ -25,19 +25,19 @@ lv_obj_t* ui_Screen13_screen_init(void)
     lv_image_set_src(ui_Image53, &ui_img_s5_hour_png);
     lv_obj_align(ui_Image53, LV_ALIGN_CENTER, -57, -45);
     lv_image_set_pivot(ui_Image53, 115, 85);
-    lv_image_set_rotation(ui_Image53, 540);
+    //lv_image_set_rotation(ui_Image53, 540);
 
     lv_obj_t* ui_Image54 = lv_image_create(ui_Screen13);
     lv_image_set_src(ui_Image54, &ui_img_s5_min_png);
     lv_obj_align( ui_Image54, LV_ALIGN_CENTER, 76, -41);
     lv_image_set_pivot(ui_Image54, 1, 83);
-    lv_image_set_rotation(ui_Image54, -620);
+    //lv_image_set_rotation(ui_Image54, -620);
 
     lv_obj_t* ui_Image55 = lv_image_create(ui_Screen13);
     lv_image_set_src(ui_Image55, &ui_img_s5_sec_png);
     lv_obj_align(ui_Image55, LV_ALIGN_CENTER, 57, -1);
     lv_image_set_pivot(ui_Image55,42,7);
-    lv_image_set_rotation(ui_Image55,-905);
+    //lv_image_set_rotation(ui_Image55,-905);
 
 
     lv_obj_t* ui_Image56 = lv_image_create(ui_Screen13);
@@ -59,7 +59,7 @@ void ui_Screen13_set_time(int hour, int min, int sec)
 {
     // mod pointer
     lv_obj_t* ui_Screen13 = ui_screen_get(_UI_SCREEN_INDEX);
-    lv_image_set_rotation(lv_obj_get_child(ui_Screen13, 3), sec * 60 - 770);
-    lv_image_set_rotation(lv_obj_get_child(ui_Screen13, 2), min * 60 - 610);
-    lv_image_set_rotation(lv_obj_get_child(ui_Screen13, 1), hour * 5 * 60 + 700);
+    lv_image_set_rotation(lv_obj_get_child(ui_Screen13, 3), sec * 60 - 905 + 5);
+    lv_image_set_rotation(lv_obj_get_child(ui_Screen13, 2), min * 60 + sec - 620);
+    lv_image_set_rotation(lv_obj_get_child(ui_Screen13, 1), 5 * (hour * 60 + min) + 540 + 30);
 }
