@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "nvs_cfg.h"
-#include "cJSON.h"
+#include "yos_nvs.h"
 #include "yos_http.h"
+#include "cJSON.h"
 #include "zlib.h"
 #include "doWeather.h"
 
@@ -14,8 +14,8 @@ static const char* weatcher_ca_cert = "\x30\x82\x05\xDE\x30\x82\x03\xC6\xA0\x03\
 
 static int ungzip(char* src, int src_len, char* des, int des_len);
 static int json_parse_display(const char* str, weather_display_cb_t display_cb, void* arg);
-static int weather_load_config(void* ctx, nvs_cfg_read_cb_t read_cb, void* arg);
-static int weather_save_config(void* ctx, nvs_cfg_write_cb_t write_cb, void* arg);
+static int weather_load_config(void* ctx, yos_nvs_read_cb_t read_cb, void* arg);
+static int weather_save_config(void* ctx, yos_nvs_write_cb_t write_cb, void* arg);
 static int weather_query_internal(const char* city_pos, const char* api_key, weather_display_cb_t display_cb, void* arg);
 
 
@@ -30,7 +30,7 @@ int weather_query_first(const char* pos_key, weather_display_cb_t display_cb, vo
     const char* api_key = pos_key + strlen(pos_key) + 1;
     int ret = weather_query_internal(city_pos, api_key, display_cb, arg);
     if (ret == 0) {
-        ret = nvs_cfg_save(NVS_CFG_WEATHER_INFO_NAMESPACE, weather_save_config, (void*)pos_key);
+        ret = yos_nvs_save(YOS_NVS_WEATHER_INFO_NAMESPACE, weather_save_config, (void*)pos_key);
     }
     return ret;
 }
@@ -38,7 +38,7 @@ int weather_query_first(const char* pos_key, weather_display_cb_t display_cb, vo
 int weather_query(weather_display_cb_t display_cb, void* arg)
 {
     char pos_key[64 + 64] = { 0 };
-    int ret = nvs_cfg_load(NVS_CFG_WEATHER_INFO_NAMESPACE, weather_load_config, pos_key);
+    int ret = yos_nvs_load(YOS_NVS_WEATHER_INFO_NAMESPACE, weather_load_config, pos_key);
     if (ret != 0) {
         strcpy(pos_key, "116.39145,39.9073"); // BEIJING
         strcpy(pos_key + 64, "c98d7cb82cdc49b7a20f8367e865868a"); // github
@@ -109,7 +109,7 @@ end:
     return ret;
 }
 
-static int weather_load_config(void* ctx, nvs_cfg_read_cb_t read_cb, void* arg) {
+static int weather_load_config(void* ctx, yos_nvs_read_cb_t read_cb, void* arg) {
     char* city_pos = (char*)ctx;
     char* api_key = city_pos + 64;
     int ret = read_cb(arg, config_keys[0], city_pos, 64);
@@ -119,7 +119,7 @@ static int weather_load_config(void* ctx, nvs_cfg_read_cb_t read_cb, void* arg) 
     return ret;
 }
 
-static int weather_save_config(void* ctx, nvs_cfg_write_cb_t write_cb, void* arg) {
+static int weather_save_config(void* ctx, yos_nvs_write_cb_t write_cb, void* arg) {
     char* city_pos = (char*)ctx;
     char* api_key = city_pos + strlen(city_pos) + 1;
     int ret = write_cb(arg, config_keys[0], city_pos);
@@ -149,7 +149,7 @@ static int weather_query_internal(const char* city_pos, const char* api_key, wea
     if (des != NULL) {
         ungzip((char*)resp, (int)resp_len, des, des_len);
 
-        printf("weather_query resp_len:%ld, des_len:%d, strlen:%d\n", resp_len, des_len, (int)strlen(des));
+        //printf("weather_query resp_len:%ld, des_len:%d, strlen:%d\n", resp_len, des_len, (int)strlen(des));
         
         ret = json_parse_display(des, display_cb, arg);
     }

@@ -17,7 +17,8 @@
 #include "esp_lcd_touch_gt911.h"
 #include "esp_lcd_st7701.h"
 #include "lvgl_port.h"
-#include "nvs_cfg.h"
+#include "yos_nvs.h"
+#include "yos_wifi.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Please update the following configuration according to your LCD spec //////////////////////////////
@@ -263,7 +264,7 @@ void app_main()
 {
     ESP_LOGI(TAG, "begin esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
-    ESP_ERROR_CHECK(nvs_cfg_init());
+    ESP_ERROR_CHECK(yos_nvs_init());
 
     if (SWITCH86_PIN_NUM_BK_LIGHT >= 0) {
         ESP_LOGI(TAG, "Turn off LCD backlight");
@@ -288,12 +289,10 @@ void app_main()
 		lvgl_port_set_lcd_sleep_cb(esp_lcd_sleep);
     }
 
+    yos_wifi_station_init(); // 必须第一个运行   
 
     extern esp_err_t rec_asr_init(void);
-    extern esp_err_t time_sync_init(void);
-    extern esp_err_t wifi_station_init(void);
-   
-    wifi_station_init(); // 必须第一个运行   
+    extern esp_err_t time_sync_init(void);   
     time_sync_init();
     rec_asr_init();
     

@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include "nvs_cfg.h"
-#include "wifi_station.h"
+#include "yos_nvs.h"
+#include "yos_wifi.h"
 #include "doMIoT.h"
 #include "doWeather.h"
 #include "doMain.h"
@@ -81,11 +81,11 @@ void ui_main(void)
 
     ui_init(ui_load_cb);
 
-    int32_t index = (nvs_cfg_check(NVS_CFG_WIFI_INFO_NAMESPACE) == 0) ? 0 : -1;
+    int32_t index = (yos_nvs_check(YOS_NVS_WIFI_INFO_NAMESPACE) == 0) ? 0 : -1;
     lv_screen_load(ui_screen_get(index));
 
     lv_timer_create(updateTime, 1000, NULL);
-    if (nvs_cfg_check(NVS_CFG_WIFI_INFO_NAMESPACE) == 0) {
+    if (yos_nvs_check(YOS_NVS_WIFI_INFO_NAMESPACE) == 0) {
         weather_task_status = true;
         lv_thread_init(&threadWeather, LV_THREAD_PRIO_LOW, getWeather, 4096, NULL);
     }
@@ -95,7 +95,7 @@ typedef struct __temp_load_context_t {
     const char** keys;
     void (*set_config_with_index)(int32_t index, const char* value);
 }_temp_load_context_t;
-static int load_config_cb(void* ctx_, nvs_cfg_read_cb_t read_cb, void* arg) {
+static int load_config_cb(void* ctx_, yos_nvs_read_cb_t read_cb, void* arg) {
     _temp_load_context_t* ctx = (_temp_load_context_t*)ctx_;
     const char** keys = ctx->keys;
     char value[64];
@@ -110,11 +110,11 @@ static void ui_load_cb(int32_t index)
 {
     if (index == -2) {
         _temp_load_context_t ctx = { miot_get_ui_config_keys(), ui_ScreenC2_set_config_with_index };
-        nvs_cfg_load(NVS_CFG_XMIOT_INFO_NAMESPACE, load_config_cb, &ctx);
+        yos_nvs_load(YOS_NVS_XMIOT_INFO_NAMESPACE, load_config_cb, &ctx);
     }
     else if (index == -3) {
         _temp_load_context_t ctx = { weather_get_config_keys(), ui_ScreenC3_set_config_with_index };
-        nvs_cfg_load(NVS_CFG_WEATHER_INFO_NAMESPACE, load_config_cb, &ctx);
+        yos_nvs_load(YOS_NVS_WEATHER_INFO_NAMESPACE, load_config_cb, &ctx);
     }
 }
 
@@ -174,7 +174,7 @@ void wifi_scan_task(void *pvParameters)
     lv_delay_ms(200);
 
     char ssids[256] = {0};
-    wifi_station_scan(ssids, sizeof(ssids));
+    yos_wifi_station_scan(ssids, sizeof(ssids));
   
     lv_lock();
     ui_ScreenC1_set_result(1, ssids);
@@ -188,7 +188,7 @@ void wifi_connect_task(void *pvParameters)
     const char* pswd = ssid + strlen(ssid) + 1;
 
     lv_delay_ms(200);
-    int ret = wifi_station_connect(ssid, pswd);
+    int ret = yos_wifi_station_connect(ssid, pswd);
    
     lv_lock();
     ui_ScreenC1_set_result(0, (ret == 0)? "Success" : "Failed");

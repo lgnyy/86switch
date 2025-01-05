@@ -4,7 +4,7 @@ if(CONFIG_SWITCH86_UI_ENABLE)
 endif()
 
 idf_component_register(
-    SRCS "86switch_main.c" "lvgl_port.c" "nvs_cfg.c" "wifi_station.c" "time_sync.c"  "rec_asr.c" ${UI_SRC_FILES}
+    SRCS "86switch_main.c" "lvgl_port.c" "time_sync.c"  "rec_asr.c" ${UI_SRC_FILES}
     INCLUDE_DIRS "."
     REQUIRES nvs_flash esp_wifi esp_event json)
 
