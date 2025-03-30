@@ -9,7 +9,7 @@ extern "C" {
 
     #include "lvgl.h"
 
-#define UI_NO_FEEDBACK_MODE 1
+#define UI_NO_FEEDBACK_MODE 0
 
 // SCREEN: ui_Screen2(ui_ScreenC1)
 lv_obj_t* ui_Screen2_screen_init(void);

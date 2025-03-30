@@ -3,12 +3,13 @@
 #include "ui.h"
 
 #define _UI_SCREEN_INDEX 1
+#define _UI_SCREEN10_2CLOSE 1
 
 LV_IMG_DECLARE(ui_img_s2_back2_png);   // assets\s2\back2.png
 LV_IMG_DECLARE(ui_img_s2_color_png);   // assets\s2\color.png
 LV_IMG_DECLARE(ui_img_s2_light_png);   // assets\s2\light.png
 LV_IMG_DECLARE(ui_img_s2_switch2_off_png);   // assets\s2\switch2_off.png
-#if !(UI_NO_FEEDBACK_MODE)
+#if !(_UI_SCREEN10_2CLOSE)
 LV_IMG_DECLARE(ui_img_s2_switch2_on_png);   // assets\s2\switch2_on.png
 #endif
 
@@ -32,10 +33,10 @@ lv_obj_t* ui_Screen10_screen_init(void)
 
     lv_obj_t* ui_Image16 = lv_image_create(ui_Screen10);
     lv_image_set_src(ui_Image16, &ui_img_s2_switch2_off_png);
-    lv_obj_align(ui_Image16, LV_ALIGN_CENTER, UI_NO_FEEDBACK_MODE?80:0, -140);
+    lv_obj_align(ui_Image16, LV_ALIGN_CENTER, _UI_SCREEN10_2CLOSE ?80:0, -140);
     lv_obj_add_flag(ui_Image16, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_ADV_HITTEST);   /// Flags
 
-#if !(UI_NO_FEEDBACK_MODE)
+#if !(_UI_SCREEN10_2CLOSE)
     lv_obj_t* ui_Image17 = lv_image_create(ui_Screen10);
     lv_image_set_src(ui_Image17, &ui_img_s2_switch2_on_png);
     lv_obj_align(ui_Image17, LV_ALIGN_CENTER, 0, -140);
@@ -89,7 +90,7 @@ lv_obj_t* ui_Screen10_screen_init(void)
     ui_create_gesture_image(ui_Screen10, _UI_SCREEN_INDEX);
 
     lv_obj_add_event_cb(ui_Screen10, ui_event_screen_x, LV_EVENT_GESTURE, (void*)_UI_SCREEN_INDEX);
-#if !(UI_NO_FEEDBACK_MODE)
+#if !(_UI_SCREEN10_2CLOSE)
     lv_obj_add_event_cb(ui_Image16, ui_event_Image16, LV_EVENT_CLICKED, ui_Image17);
     lv_obj_add_event_cb(ui_Image17, ui_event_Image17, LV_EVENT_CLICKED, ui_Image16);
 #else
@@ -110,7 +111,7 @@ void ui_Screen10_set_command_cb(void (*command_cb)(int32_t index, int32_t lightp
 static void ui_event_Image16(lv_event_t* e)
 {
     lv_obj_t* target = lv_event_get_target(e);
-#if !(UI_NO_FEEDBACK_MODE)
+#if !(_UI_SCREEN10_2CLOSE)
     lv_obj_add_flag(target, LV_OBJ_FLAG_HIDDEN);
     lv_obj_remove_flag(lv_event_get_user_data(e), LV_OBJ_FLAG_HIDDEN);
 
@@ -133,7 +134,7 @@ static void ui_event_Image17(lv_event_t* e)
 {
     lv_obj_t* target = lv_event_get_target(e);
     
-#if !(UI_NO_FEEDBACK_MODE)
+#if !(_UI_SCREEN10_2CLOSE)
     lv_obj_add_flag(target, LV_OBJ_FLAG_HIDDEN);
     lv_obj_remove_flag(lv_event_get_user_data(e), LV_OBJ_FLAG_HIDDEN);
 
