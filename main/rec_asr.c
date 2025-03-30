@@ -9,7 +9,11 @@
 #include "esp_websocket_client.h"
 #include "yos_nvs.h"
 #include "fvad.h"
+#if CONFIG_SWITCH86_XMIOT_ENABLE
 #include "xmiot_service.h"
+#else
+#include "miot_cloud.h"
+#endif
 
 #if CONFIG_SWITCH86_MIC_INMP411_ENABLE
 
@@ -17,10 +21,10 @@ static const char *TAG = "REC_ASR";
 
 
 // 用新任务执行音箱命令
+#if CONFIG_SWITCH86_XMIOT_ENABLE
 static void send_speaker_cmd_task(void *pvParameters)
 {
     char* cmd = (char*)pvParameters;
-
     void* ctx = xmiot_service_context_create();
     if (ctx != NULL){
         if (yos_nvs_load(YOS_NVS_XMIOT_INFO_NAMESPACE, xmiot_service_load_config, ctx) == 0){
@@ -47,6 +51,38 @@ static void send_speaker_cmd(const char* data, size_t cmd_len)
         xTaskCreate(&send_speaker_cmd_task, "cmd_task", 4096, arg, 5, NULL);
     }
 }
+
+#else
+static int _load_config(void* ctx_,
+    int (*read_cb)(void* arg, const char* key, char* value, size_t vsize), void* arg) {
+    read_cb(arg, "speaker_did", (char*)ctx_, 32);
+    return read_cb(arg, "access_token", ((char*)ctx_)+32, 256);
+}
+static void send_speaker_cmd_task(void *pvParameters)
+{
+    char* value = (char*)pvParameters;
+    char speaker_did_access_token[32+256] = {0};
+    if (yos_nvs_load(YOS_NVS_MIOT_INFO_NAMESPACE, _load_config, speaker_did_access_token) == 0){
+        miot_cloud_action(speaker_did_access_token+32, speaker_did_access_token, 5, 5, value, NULL);
+    }
+
+    free(value);
+    vTaskDelete(NULL);
+}
+
+static void send_speaker_cmd(const char* data, size_t cmd_len)
+{
+    char* arg = (char*)malloc(cmd_len + 10);
+    if (arg != NULL){
+        arg[0] = '"';
+        memcpy(arg+1, data, cmd_len);
+        memcpy(arg+1+cmd_len, "\",1", 4);
+
+        // 开启新任务
+        xTaskCreate(&send_speaker_cmd_task, "cmd_task", 0x2000, arg, 5, NULL);
+    }
+}
+#endif
 
 // 语音识别结果处理
 static void asr_result_process(const char* data_ptr, int data_len)
@@ -210,6 +246,7 @@ static void rec_asr_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
+#if CONFIG_SWITCH86_XMIOT_ENABLE
 #if !CONFIG_SWITCH86_UI_ENABLE
 #include "xmiot_account.h"
 static int xmiot_save_config(void* ctx, yos_nvs_write_cb_t write_cb, void* arg){
@@ -220,18 +257,34 @@ static int xmiot_save_config(void* ctx, yos_nvs_write_cb_t write_cb, void* arg){
     return ret;
 }
 #endif
+#else
+#ifdef CONFIG_SWITCH86_MIOT_ACCESS_TOKEN
+static int miot_save_config(void* ctx, yos_nvs_write_cb_t write_cb, void* arg){
+    write_cb(arg, "access_token",  CONFIG_SWITCH86_MIOT_ACCESS_TOKEN);
+    write_cb(arg, "refresh_token", CONFIG_SWITCH86_MIOT_REFRESH_TOKEN);
+    write_cb(arg, "expires_ts",  CONFIG_SWITCH86_MIOT_EXPIRES_TS);
+    return write_cb(arg, "speaker_did",  CONFIG_SWITCH86_MIOT_SPEAKER_DID);
+}
+#endif
+#endif
 
 // 录音和语音识别初始化
 esp_err_t rec_asr_init(void)
 {
- #if !CONFIG_SWITCH86_UI_ENABLE // 无UI，根据配置登录小米云服务，并保存token等
+#if CONFIG_SWITCH86_XMIOT_ENABLE   
+#if !CONFIG_SWITCH86_UI_ENABLE // 无UI，根据配置登录小米云服务，并保存token等
     void* ctx = xmiot_service_context_create();
     if (yos_nvs_load(YOS_NVS_XMIOT_INFO_NAMESPACE, xmiot_service_load_config, ctx) != 0){
-        ESP_LOGW(TAG, "yos_nvs_load(xmiot) ret:%d", ret);
+        ESP_LOGW(TAG, "yos_nvs_load(xmiot) ret:%d", -1);
         yos_nvs_save(YOS_NVS_XMIOT_INFO_NAMESPACE, xmiot_save_config, ctx);
         xmiot_service_context_destory(ctx);
     }
- #endif
+#endif
+#else
+#ifdef CONFIG_SWITCH86_MIOT_ACCESS_TOKEN
+    yos_nvs_save(YOS_NVS_MIOT_INFO_NAMESPACE, miot_save_config, NULL);
+#endif
+#endif
 
     i2s_chan_handle_t rx_handle = init_microphone();
 
