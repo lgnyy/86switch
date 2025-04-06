@@ -1,6 +1,7 @@
 
 
 #include "ui.h"
+#include <time.h>
 
 #if !(CONFIG_SWITCH86_XMIOT_ENABLE)
 #define _UI_SCREEN_INDEX -2
