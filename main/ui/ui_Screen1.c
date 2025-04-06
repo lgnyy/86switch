@@ -96,10 +96,8 @@ lv_obj_t* ui_Screen1_screen_init(void)
     lv_list_add_text(list1, "Config");
     lv_obj_t* btn = lv_list_add_button(list1, LV_SYMBOL_WIFI, "WiFi");
     lv_obj_add_event_cb(btn, ui_event_config_list, LV_EVENT_CLICKED, (void*)-1);
-#if CONFIG_SWITCH86_XMIOT_ENABLE
     btn = lv_list_add_button(list1, LV_SYMBOL_HOME, "MIoT");
     lv_obj_add_event_cb(btn, ui_event_config_list, LV_EVENT_CLICKED, (void*)-2);
-#endif
     btn = lv_list_add_button(list1, LV_SYMBOL_GPS, "Weather");
     lv_obj_add_event_cb(btn, ui_event_config_list, LV_EVENT_CLICKED, (void*)-3);
 

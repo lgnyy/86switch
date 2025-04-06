@@ -47,6 +47,15 @@ lv_obj_t* ui_screen_get(int32_t index)
     return ui_screen_page_list[index];
 }
 
+void ui_screen_del(int32_t index)
+{
+    if (index < 0) {
+        int32_t i = -1 - index;
+        lv_obj_clean(ui_screen_config_list[i]);
+        ui_screen_config_list[i] = NULL;
+    }
+}
+
 void ui_screen_change(int32_t index)
 {
     lv_obj_t* target = ui_screen_get(index);

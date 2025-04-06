@@ -2,7 +2,7 @@
 
 #include "ui.h"
 
-#if CONFIG_SWITCH86_XMIOT_ENABLE
+#if !(CONFIG_SWITCH86_XMIOT_ENABLE)
 #define _UI_SCREEN_INDEX -2
 
 LV_IMG_DECLARE(ui_img_logo_png);   // assets\logo.png
@@ -43,28 +43,19 @@ lv_obj_t* ui_ScreenC2_screen_init(void)
 
     lv_obj_t* textarea1 = lv_textarea_create(screenC2);
     lv_obj_set_size(textarea1, 292, LV_SIZE_CONTENT);
-    lv_obj_align(textarea1, LV_ALIGN_CENTER, -52, -128);
-    lv_textarea_set_placeholder_text(textarea1, "Username");
+    lv_obj_align(textarea1, LV_ALIGN_CENTER, -52, -90);
+    lv_textarea_set_placeholder_text(textarea1, "expires_ts");
     lv_textarea_set_one_line(textarea1, true);
     lv_obj_set_style_text_font(textarea1, &lv_font_montserrat_20, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    lv_obj_t* textarea2 = lv_textarea_create(screenC2);
-    lv_obj_set_size(textarea2, 292, LV_SIZE_CONTENT);
-    lv_obj_align(textarea2, LV_ALIGN_CENTER, -52, -61);
-    lv_textarea_set_placeholder_text(textarea2,"Password");
-    lv_textarea_set_one_line(textarea2,true);
-    lv_textarea_set_password_mode(textarea2, true);
-    lv_obj_set_style_text_font(textarea2, &lv_font_montserrat_20, LV_PART_MAIN| LV_STATE_DEFAULT);
-
     lv_obj_t* button2 = lv_button_create(screenC2);
     lv_obj_set_size(button2, 85, 41);
-    lv_obj_align(button2, LV_ALIGN_CENTER, 151, -61);
+    lv_obj_align(button2, LV_ALIGN_CENTER, 151, -90);
     lv_obj_add_flag(button2, LV_OBJ_FLAG_SCROLL_ON_FOCUS);   /// Flags
     lv_obj_t* label3 = lv_label_create(button2);
-    lv_label_set_text(label3, "Login");
+    lv_label_set_text(label3, "Token");
     lv_obj_set_align(label3, LV_ALIGN_CENTER);
     lv_obj_set_style_text_font(label3, &ui_font_Font4, LV_PART_MAIN | LV_STATE_DEFAULT);
-
 
     lv_obj_t* textarea3 = lv_textarea_create(screenC2);
     lv_obj_set_size(textarea3, 292, LV_SIZE_CONTENT);
@@ -78,7 +69,7 @@ lv_obj_t* ui_ScreenC2_screen_init(void)
     lv_obj_align(button3, LV_ALIGN_CENTER, 151, 6);
     lv_obj_add_flag(button3, LV_OBJ_FLAG_SCROLL_ON_FOCUS);   /// Flags
     lv_obj_t* label4 = lv_label_create(button3);
-    lv_label_set_text(label4, "Query");
+    lv_label_set_text(label4, "Modify"); // Query
     lv_obj_set_align(label4, LV_ALIGN_CENTER);
     lv_obj_set_style_text_font(label4, &ui_font_Font4, LV_PART_MAIN | LV_STATE_DEFAULT);
 
@@ -95,13 +86,12 @@ lv_obj_t* ui_ScreenC2_screen_init(void)
 
     lv_keyboard_set_textarea(keyboard1, textarea1);
     lv_obj_add_event_cb(textarea1, ui_event_textarea_focused, LV_EVENT_FOCUSED, keyboard1);
-    lv_obj_add_event_cb(textarea2, ui_event_textarea_focused, LV_EVENT_FOCUSED, keyboard1);
     lv_obj_add_event_cb(textarea3, ui_event_textarea_focused, LV_EVENT_FOCUSED, keyboard1);
     lv_obj_add_event_cb(button1, ui_event_button_close, LV_EVENT_CLICKED, NULL);
     lv_obj_add_event_cb(button2, ui_event_button_login, LV_EVENT_CLICKED, NULL);
     lv_obj_add_event_cb(button3, ui_event_button_query, LV_EVENT_CLICKED, NULL);
 
-    return screenC2;
+     return screenC2;
 }
 
 void ui_ScreenC2_set_command_cb(void (*command_cb)(int op, const char* username, const char* passsword))
@@ -111,24 +101,37 @@ void ui_ScreenC2_set_command_cb(void (*command_cb)(int op, const char* username,
 
 void ui_ScreenC2_set_config_with_index(int32_t index, const char* value)
 {
-    int32_t obj_index = (index == 0) ? 0 : 2;
+    int32_t obj_index = index;
     lv_obj_t* screenC2 = ui_screen_get(_UI_SCREEN_INDEX);
     lv_obj_t* textarea1 = lv_obj_get_child_by_type(screenC2, obj_index, &lv_textarea_class);
  
-    lv_textarea_set_text(textarea1, value);
+    if  (obj_index == 0){
+        char ts_str[32];
+        snprintf(ts_str, sizeof(ts_str), "expires in: %lld S", atoll(value) - time(NULL));
+        lv_textarea_set_text(textarea1, ts_str);
+    }
+    else {
+        lv_textarea_set_text(textarea1, value);
+    }
 }
 
 void ui_ScreenC2_set_result(int32_t op, const char* result)
 {
     lv_obj_t* screenC2 = ui_screen_get(_UI_SCREEN_INDEX);
-    if (op == 2) {
-        lv_obj_t* textarea3 = lv_obj_get_child_by_type(screenC2, 2, &lv_textarea_class);
-        lv_textarea_set_text(textarea3, result);
+    if (op == 1) { // show qr
+        lv_obj_t* qr = lv_qrcode_create(screenC2);
+        lv_qrcode_set_size(qr, 360);
+        lv_qrcode_update(qr, result, lv_strlen(result));
+        lv_obj_center(qr);
     }
-    else {
+    else { // set status
         lv_obj_t* label3 = lv_obj_get_child_by_type(screenC2, 0, &lv_label_class);
         lv_label_set_text(label3, result);
 
+        lv_obj_t* qr = lv_obj_get_child_by_type(screenC2, 0, &lv_qrcode_class);
+        if (qr != NULL) {
+            lv_obj_del(qr);
+        }
         ui_modify_button_flag(screenC2, false);
     }
 }
@@ -163,25 +166,23 @@ static void ui_event_button_close(lv_event_t* e)
 static void ui_event_button_login(lv_event_t* e)
 {
     lv_obj_t* screenC2 = lv_obj_get_parent(lv_event_get_target(e));
-    lv_obj_t* textarea1 = lv_obj_get_child_by_type(screenC2, 0, &lv_textarea_class);
-    lv_obj_t* textarea2 = lv_obj_get_child_by_type(screenC2, 1, &lv_textarea_class);
     lv_obj_t* label3 = lv_obj_get_child_by_type(screenC2, 0, &lv_label_class);
 
-    const char* username = lv_textarea_get_text(textarea1);
-    const char* password = lv_textarea_get_text(textarea2);
-   
-    lv_label_set_text(label3, "Login...");
+    lv_label_set_text(label3, "Get Token...");
     ui_modify_button_flag(screenC2, true);
-    _command_cb(1, username, password);
+    _command_cb(1, NULL, NULL);
 }
 
 static void ui_event_button_query(lv_event_t* e)
 {
     lv_obj_t* screenC2 = lv_obj_get_parent(lv_event_get_target(e));
-    lv_obj_t* label3 = lv_obj_get_child_by_type(screenC2, 0, &lv_label_class);
+    lv_obj_t* textarea2 = lv_obj_get_child_by_type(screenC2, 1, &lv_textarea_class);
+    //lv_obj_t* label3 = lv_obj_get_child_by_type(screenC2, 0, &lv_label_class);
 
-    lv_label_set_text(label3, "Query...");
-    ui_modify_button_flag(screenC2, true);
-    _command_cb(2, NULL, NULL);
+    const char* speaker_did = lv_textarea_get_text(textarea2);
+
+    //lv_label_set_text(label3, "Query...");
+    //ui_modify_button_flag(screenC2, true);
+    _command_cb(2, speaker_did, NULL);
 }
-#endif // #if CONFIG_SWITCH86_XMIOT_ENABLE
+#endif // #if !(CONFIG_SWITCH86_XMIOT_ENABLE)

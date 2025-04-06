@@ -64,6 +64,7 @@ LV_FONT_DECLARE( ui_font_Font4);
 
 void ui_init(void (*load_cb)(int32_t index));
 lv_obj_t* ui_screen_get(int32_t index);
+void ui_screen_del(int32_t index);
 void ui_screen_change(int32_t index);
 void ui_event_screen_x(lv_event_t* e);
 void ui_create_gesture_image(lv_obj_t* parent, int curr_index);

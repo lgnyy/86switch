@@ -57,7 +57,7 @@ const int devLightp_siid = 2;
 const int devLightp_piids[] = {1, 2, 3, 0};
 
 const char* devLights_did = "lumi.54ef441000339eca";
-const int devLights_siids[] = {2, 3, 4, 0};
+const int devLights_siids[] = {3, 2, 4, 0};
 const int devLights_piid = 1;
 
 #define miot_send_cmd(cmd) miot_action("402807754", 5, 5, cmd)
@@ -74,7 +74,11 @@ static lv_thread_t threadConfig, threadWeather, threadCmd;
 static char* merge_two_strings(const char* s1, const char* s2);
 static void ui_load_cb(int32_t index);
 static void wifi_command(int op, const char* ssid, const char* pswd);
+#if CONFIG_SWITCH86_XMIOT_ENABLE
 static void miot_command(int op, const char* username, const char* passsword);
+#else
+static void miot_command(int op, const char* reserve1, const char* reserve2);
+#endif
 static void weather_command(const char* city_pos, const char* api_key);
 static void lightp_command(int32_t index, int32_t lightp, int32_t colorp);
 static void light_command(int32_t index, bool on);
@@ -84,7 +88,6 @@ static int updateWeather(void* arg, int index, const char* value);
 static void getWeather(void* pvParameters);
 typedef struct __command_param {
     char* cmd;
-    int32_t type;
     int32_t index, lightp, colorp;
 }_command_param_t;
 static void sendCommand(const char* cmd);
@@ -113,24 +116,31 @@ void ui_main(void)
         lv_thread_init(&threadWeather, LV_THREAD_PRIO_LOW, getWeather, 4096, NULL);
     }
 
-    char expires_ts_str[32] = { 0 };
-    if (miot_get_token_expires_ts(expires_ts_str) == 0) {
-        int64_t expires_ts = atoll(expires_ts_str) - 300;
-        time_t now = time(NULL);
-        uint32_t period = (expires_ts > now) ? (uint32_t)(expires_ts - now) : 60;
-        lv_timer_create(refreshToken, period*1000, NULL); 
-    }
+    lv_timer_create(refreshToken, 60 * 1000, NULL);
 }
 
 static void refreshToken(lv_timer_t* timer) {
-    uint32_t period = 60;
-    // TODO: new task
-    if (miot_refresh_access_token() == 0) {
-        char expires_ts_str[32] = { 0 };
-        miot_get_token_expires_ts(expires_ts_str);
-        period = (uint32_t)(atoll(expires_ts_str) - 300 - time(NULL));
+    time_t now = time(NULL);
+    if (now > 1743500000) { // time ok
+        int64_t expires_ts = 0;
+        char expires_ts_str[32];
+        if (miot_get_token_expires_ts(expires_ts_str) == 0) {
+            expires_ts = atoll(expires_ts_str);
+        }
+
+        printf("now: %lld, expires_ts: %lld\n", now, expires_ts);
+        if (now + 3600 < expires_ts) { // > 60 minute
+            // 30 minute before
+            //printf("new period: %d\n", (int)(expires_ts - 1800 - now));
+            lv_timer_set_period(timer, (uint32_t)(expires_ts-1800-now) * 1000);
+        }
+        else {
+            if (now < expires_ts) {
+                sendCommand("refresh_token");
+            }
+            lv_timer_set_period(timer, 60 * 1000);
+        }
     }
-    lv_timer_set_period(timer, period * 1000);
 }
 
 typedef struct __temp_load_context_t {
@@ -154,6 +164,9 @@ static void ui_load_cb(int32_t index)
 #if CONFIG_SWITCH86_XMIOT_ENABLE
         _temp_load_context_t ctx = { miot_get_ui_config_keys(), ui_ScreenC2_set_config_with_index };
         yos_nvs_load(YOS_NVS_XMIOT_INFO_NAMESPACE, load_config_cb, &ctx);
+#else
+        _temp_load_context_t ctx = { miot_get_ui_config_keys(), ui_ScreenC2_set_config_with_index };
+        yos_nvs_load(YOS_NVS_MIOT_INFO_NAMESPACE, load_config_cb, &ctx);
 #endif
     }
     else if (index == -3) {
@@ -166,8 +179,7 @@ static void lightp_command(int32_t index, int32_t lightp, int32_t colorp)
 {
     _command_param_t* param = (_command_param_t*)malloc(sizeof(_command_param_t));
     if (param != NULL) {
-        param->cmd = "lightp";
-        param->type = 1;
+        param->cmd = "table_lamp";
         param->index = index;
         param->lightp = lightp;
         param->colorp = colorp;
@@ -180,7 +192,6 @@ static void light_command(int32_t index, bool on)
     _command_param_t* param = (_command_param_t*)malloc(sizeof(_command_param_t));
     if (param != NULL) {
         param->cmd = "lights";
-        param->type = 2;
         param->index = index;
         param->lightp = on ? 100 : 0;
         param->colorp = 0;
@@ -287,11 +298,9 @@ void miot_query_task(void* pvParameters)
     }
     lv_unlock();
 }
-#endif
 
 static void miot_command(int op, const char* username, const char* passsword)
 {
-#if CONFIG_SWITCH86_XMIOT_ENABLE
     if (op == 1) {
         char* name_pwd = merge_two_strings(username, passsword);
         if (name_pwd == NULL) {
@@ -303,9 +312,34 @@ static void miot_command(int op, const char* username, const char* passsword)
     else {
         lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, miot_query_task, 4096, NULL);
     }
-#endif
+}
+#else // #if CONFIG_SWITCH86_XMIOT_ENABLE
+
+
+static void miot_command(int op, const char* reserve1, const char* reserve2)
+{
+    if (op == 1) {
+        char url[512];
+        miot_gen_auth_url(url, sizeof(url));
+        ui_ScreenC2_set_result(1, url);
+
+        lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, miot_login_task, 4096, NULL);
+    }
+    else {
+        miot_set_speaker_did(reserve1);
+        //lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, miot_query_task, 4096, NULL);
+    }
 }
 
+void miot_login_task(void* pvParameters)
+{
+    int ret = miot_get_access_token();
+
+    lv_lock();
+    ui_ScreenC2_set_result(0, (ret == 0) ? "Success" : "Failed");
+    lv_unlock();
+}
+#endif // #if CONFIG_SWITCH86_XMIOT_ENABLE
 
 void weather_query_task(void* pvParameters)
 {
@@ -369,26 +403,23 @@ static void getWeather(void *pvParameters)
 static void cmd_task(void* arg)
 {
     _command_param_t* param = (_command_param_t*)arg;
-    if (param->type == 0) {
-        miot_send_cmd(param->cmd);
-    }
 #if CONFIG_SWITCH86_XMIOT_ENABLE
-    else if (param->type == 1) {
-        if (lightp > 0) {
+    if (strcmp(param->cmd, "table_lamp") == 0){
+        if (param->lightp > 0) {
             char cmd[256];
-            const char* fmt = lightp_on_command_list[1 + index];
-            snprintf(cmd, sizeof(cmd), fmt, lightp, 1700 + 48 * colorp);
+            const char* fmt = lightp_on_command_list[1 + param->index];
+            snprintf(cmd, sizeof(cmd), fmt, param->lightp, 1700 + 48 * param->colorp);
             miot_send_cmd(cmd);
         }
         else {
-            miot_send_cmd(lightp_off_command_list[1 + index]);
+            miot_send_cmd(lightp_off_command_list[1 + param->index]);
         }
     }
-    else {
-        miot_send_cmd(param->lightp ? light_on_command_list[index] : light_off_command_list[index]);
+    else if (strcmp(param->cmd, "lights") == 0) {
+        miot_send_cmd(param->lightp ? light_on_command_list[param->index] : light_off_command_list[param->index]);
     }
 #else  /* #if CONFIG_SWITCH86_XMIOT_ENABLE */
-    else if (param->type == 1) {
+    if (strcmp(param->cmd, "table_lamp") == 0) {
         if (param->lightp > 0) {
             char p[32], c[32];
             const char* values[] = { "true", p, c, NULL };
@@ -408,7 +439,7 @@ static void cmd_task(void* arg)
             }
         }
     }
-    else {
+    else if (strcmp(param->cmd, "lights") == 0) {
         const char* value = param->lightp ? "true" : "false";
         if (param->index == 0) {
             miot_set_props_siid(devLights_did, devLights_siids, devLights_piid, value);
@@ -417,20 +448,25 @@ static void cmd_task(void* arg)
             miot_set_prop(devLights_did, devLights_siids[param->index - 1], devLights_piid, value);
         }
     }
+    else if (strcmp(param->cmd, "refresh_token") == 0) {
+        miot_refresh_access_token();
+    }
 #endif  /* #if CONFIG_SWITCH86_XMIOT_ENABLE */
+    else {
+        miot_send_cmd(param->cmd);
+    }
 
     lv_lock();
     cmd_task_status = false;
     lv_unlock();
     free(arg);
 }
-static void sendCommand(const char* cmd) 
+static void sendCommand(const char* cmd)
 {
     _command_param_t* param = (_command_param_t*)malloc(sizeof(_command_param_t) + strlen(cmd) + 8);
     if (param == NULL) {
         return;
     }
-    param->type = 0;
     param->cmd = (char*)(param + 1);
     strcpy(param->cmd, cmd);
     sendCommand_param(param);

@@ -1,7 +1,7 @@
 
-#if CONFIG_SWITCH86_XMIOT_ENABLE
-
 const char** miot_get_ui_config_keys(void);
+
+#if CONFIG_SWITCH86_XMIOT_ENABLE
 
 int miot_login(const char* username, const char* password);
 
@@ -14,7 +14,10 @@ int miot_send_cmd(const char* cmd);
 #else /* #if CONFIG_SWITCH86_XMIOT_ENABLE */
 
 int miot_get_token_expires_ts(char expires_ts[32]);
+int miot_set_speaker_did(const char* speaker_did);
 int miot_refresh_access_token(void);
+int miot_gen_auth_url(char* output, size_t max_out_len);
+int miot_get_access_token(void);
 
 int miot_set_prop(const char* did, int siid, int piid, const char* value);
 int miot_set_props_siid(const char* did, const int siids[4], int piid, const char* value);
