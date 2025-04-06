@@ -109,13 +109,6 @@ menu "Switch86 Configuration"
             help
                 Enable this option if you wish to UI Configuration.
 
-        config LV_USE_DEMO_WIDGETS
-            depends on !SWITCH86_UI_ENABLE
-            bool "USE DEMO WIDGETS"
-            default "y"
-            help
-                Please do not modify this configuration.
-
         config SWITCH86_UI_OFF_WIFI_SSID
             depends on !SWITCH86_UI_ENABLE
             string "WIFI SSID"
