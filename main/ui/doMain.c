@@ -160,7 +160,12 @@ static int load_config_cb(void* ctx_, yos_nvs_read_cb_t read_cb, void* arg) {
 }
 static void ui_load_cb(int32_t index)
 {
-    if (index == -2) {
+    if (index == -1) {
+        char ip[20] = { 0 };
+        yos_wifi_station_get_ip4(ip);
+        ui_ScreenC1_set_config_with_index(0, ip);
+    }
+    else if (index == -2) {
 #if CONFIG_SWITCH86_XMIOT_ENABLE
         _temp_load_context_t ctx = { miot_get_ui_config_keys(), ui_ScreenC2_set_config_with_index };
         yos_nvs_load(YOS_NVS_XMIOT_INFO_NAMESPACE, load_config_cb, &ctx);
@@ -254,6 +259,11 @@ void wifi_connect_task(void *pvParameters)
     int ret = yos_wifi_station_connect(ssid, pswd);
    
     lv_lock();
+    if (ret == 0) {
+        char ip[20] = { 0 };
+        yos_wifi_station_get_ip4(ip);
+        ui_ScreenC1_set_config_with_index(0, ip);
+    }
     ui_ScreenC1_set_result(0, (ret == 0)? "Success" : "Failed");
     lv_unlock();
 

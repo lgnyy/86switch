@@ -67,9 +67,14 @@ lv_obj_t* ui_Screen2_screen_init(void)
 
 
     lv_obj_t* label4 = lv_label_create(ui_Screen2);
-    lv_label_set_text(label4, "Ready");
-    lv_obj_align(label4, LV_ALIGN_CENTER, -4, 19);
+    lv_label_set_text(label4, "IP: ");
+    lv_obj_align(label4, LV_ALIGN_CENTER, -4, 0);
     lv_obj_set_style_text_font(label4, &ui_font_Font4, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_t* label5 = lv_label_create(ui_Screen2);
+    lv_label_set_text(label5, "Ready");
+    lv_obj_align(label5, LV_ALIGN_CENTER, -4, 48);
+    lv_obj_set_style_text_font(label5, &ui_font_Font4, LV_PART_MAIN | LV_STATE_DEFAULT);
 
 
     lv_obj_t* ui_Keyboard4 = lv_keyboard_create(ui_Screen2);
@@ -91,6 +96,13 @@ void ui_Screen2_set_command_cb(void (*command_cb)(int op, const char* ssid, cons
     _command_cb = command_cb;
 }
 
+void ui_ScreenC1_set_config_with_index(int32_t index, const char* value)
+{
+    lv_obj_t* ui_Screen2 = ui_screen_get(_UI_SCREEN_INDEX);
+    lv_obj_t* label4 = lv_obj_get_child_by_type(ui_Screen2, 0, &lv_label_class);
+    lv_label_set_text(label4, value);
+}
+
 void ui_Screen2_set_result(int32_t op, const char* result)
 {
     lv_obj_t* ui_Screen2 = ui_screen_get(_UI_SCREEN_INDEX);
@@ -99,8 +111,8 @@ void ui_Screen2_set_result(int32_t op, const char* result)
         lv_dropdown_set_options(ui_Dropdown2, result);
     }
     else {
-        lv_obj_t* label4 = lv_obj_get_child_by_type(ui_Screen2, 0, &lv_label_class);
-        lv_label_set_text(label4, result);
+        lv_obj_t* label5 = lv_obj_get_child_by_type(ui_Screen2, 1, &lv_label_class);
+        lv_label_set_text(label5, result);
         ui_modify_button_flag(ui_Screen2, false);
     }
 }
@@ -120,14 +132,15 @@ static void ui_modify_button_flag(lv_obj_t* parent, bool hidden)
 }
 
 static void ui_event_Button1(lv_event_t* e) {
+    ui_screen_del(_UI_SCREEN_INDEX);
     ui_screen_change(0);
 }
 
 static void ui_event_Button_scan(lv_event_t* e)
 {
     lv_obj_t* ui_Screen2 = lv_obj_get_parent(lv_event_get_target(e));
-    lv_obj_t* label4 = lv_obj_get_child_by_type(ui_Screen2, 0, &lv_label_class);
-    lv_label_set_text(label4, "Scan...");
+    lv_obj_t* label5 = lv_obj_get_child_by_type(ui_Screen2, 1, &lv_label_class);
+    lv_label_set_text(label5, "Scan...");
     ui_modify_button_flag(ui_Screen2, true);
 
     _command_cb(1, NULL, NULL);
@@ -142,8 +155,8 @@ static void ui_event_Key_Ok(lv_event_t* e)
     {
         lv_obj_t* ui_TextArea1 = lv_keyboard_get_textarea(target);
         lv_obj_t* ui_Dropdown2 = lv_obj_get_child_by_type(ui_Screen2, 0, &lv_dropdown_class);
-        lv_obj_t* label4 = lv_obj_get_child_by_type(ui_Screen2, 0, &lv_label_class);
-        lv_label_set_text(label4, "Connect...");
+        lv_obj_t* label5 = lv_obj_get_child_by_type(ui_Screen2, 1, &lv_label_class);
+        lv_label_set_text(label5, "Connect...");
         ui_modify_button_flag(ui_Screen2, true);
         
         char ssid[32] = { 0 };

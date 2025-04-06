@@ -18,6 +18,7 @@ void ui_Screen2_set_result(int32_t op, const char* result);
 
 #define ui_ScreenC1_screen_init ui_Screen2_screen_init
 #define ui_ScreenC1_set_command_cb ui_Screen2_set_command_cb
+void ui_ScreenC1_set_config_with_index(int32_t index, const char* value);
 #define ui_ScreenC1_set_result ui_Screen2_set_result
 
 // SCREEN: ui_ScreenC2
