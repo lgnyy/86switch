@@ -11,7 +11,7 @@ LV_IMG_DECLARE(ui_img_s1_cut2_png);   // assets\s1\cut2.png
 ///////////////////// VARIABLES ////////////////////
 static void (*ui_screen_load_cb)(int32_t index);
 static lv_obj_t* ui_screen_page_list[5];
-static lv_obj_t* ui_screen_config_list[3] = { NULL, NULL, NULL };
+static lv_obj_t* ui_screen_config_list[4] = { NULL };
 
 
 ///////////////////// ANIMATIONS ////////////////////
@@ -38,7 +38,7 @@ lv_obj_t* ui_screen_get(int32_t index)
     if (index < 0) {
         int32_t i = -1 - index;
         if (ui_screen_config_list[i] == NULL) {
-            lv_obj_t* (*init_fun_list[3])(void) = { ui_ScreenC1_screen_init, ui_ScreenC2_screen_init, ui_ScreenC3_screen_init };
+            lv_obj_t* (*init_fun_list[])(void) = { ui_ScreenC1_screen_init, ui_ScreenC2_screen_init, ui_ScreenC3_screen_init, ui_ScreenC4_screen_init };
             ui_screen_config_list[i] = init_fun_list[i]();
             ui_screen_load_cb(index);
         }

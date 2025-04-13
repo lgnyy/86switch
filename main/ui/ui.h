@@ -33,6 +33,11 @@ void ui_ScreenC3_set_command_cb(void (*command_cb)(const char* city_pos, const c
 void ui_ScreenC3_set_config_with_index(int32_t index, const char* value);
 void ui_ScreenC3_set_result(int32_t op, const char* result);
 
+// SCREEN: ui_ScreenC4
+lv_obj_t* ui_ScreenC4_screen_init(void);
+void ui_ScreenC4_set_command_cb(void (*command_cb)(const char* cmd, const char* param));
+void ui_ScreenC4_set_config_with_index(int32_t index, const char* value);
+void ui_ScreenC4_set_result(int32_t op, const char* result);
 
 
 // SCREEN: ui_Screen1
