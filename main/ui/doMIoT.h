@@ -13,16 +13,24 @@ int miot_send_cmd(const char* cmd);
 
 #else /* #if CONFIG_SWITCH86_XMIOT_ENABLE */
 
+int miot_load_config_semicolons(char* lines, int max_len);
+int miot_save_config_semicolons(const char* lines, int len);
+
 int miot_get_token_expires_ts(char expires_ts[32]);
 int miot_set_speaker_did(const char* speaker_did);
 int miot_refresh_access_token(void);
 int miot_gen_auth_url(char* output, size_t max_out_len);
-int miot_get_access_token(void);
+int miot_gen_local_url(int port, char* output, size_t max_out_len);
+int miot_get_access_token_start(void);
+int miot_get_access_token_stop(void);
+int miot_get_access_token_with_uri(const char* uri, size_t uri_len);
 
-int miot_set_prop(const char* did, int siid, int piid, const char* value);
-int miot_set_props_siid(const char* did, const int siids[4], int piid, const char* value);
-int miot_set_props_piid(const char* did, int siid, const int piids[4], const char* values[4]);
-int miot_action(const char* did, int siid, int aiid, const char* value);
+int miot_api_post(const char* url_path, const uint8_t* data, uint32_t data_len, uint8_t** resp, uint32_t* resp_len);
+void miot_free(void* ptr);
+
+int miot_action_speaker_cmd(const char* value);
+int miot_set_props_lights(int offset, int count, int value);
+int miot_set_props_light_bt(int offset, int brightness, int temperature);
 
 #endif  /* #if CONFIG_SWITCH86_XMIOT_ENABLE */
 
