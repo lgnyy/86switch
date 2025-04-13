@@ -24,28 +24,56 @@ const char** weather_get_config_keys(void)
     return config_keys;
 }
 
-int weather_query_first(const char* pos_key, weather_display_cb_t display_cb, void* arg)
+static int weather_get_pos_key(char pos[64], char key[64])
 {
-    const char* city_pos = pos_key;
-    const char* api_key = pos_key + strlen(pos_key) + 1;
-    int ret = weather_query_internal(city_pos, api_key, display_cb, arg);
+    char* args[2] = { pos, key };
+    int ret = yos_nvs_load(YOS_NVS_WEATHER_INFO_NAMESPACE, weather_load_config, args);
+    if (ret != 0) {
+        strcpy(pos, "116.39145,39.9073"); // BEIJING
+        strcpy(key, "c98d7cb82cdc49b7a20f8367e865868a"); // github
+        //return ret;
+    }
+    return 0;
+}
+
+int weather_load_config_semicolon(char* pos_key, int max_len) 
+{
+    char key[64] = { 0 };
+    weather_get_pos_key(pos_key, key);
+    strncat(pos_key, ";", max_len);
+    strncat(pos_key, key, max_len);
+    return 0;
+}
+
+int weather_save_config_semicolon(const char* pos_key, int len)
+{
+    char pos[64] = { 0 }, key[64] = { 0 };
+    int i;
+    for (i = 0; (i < len) && (pos_key[i] != ';'); i++);
+    if ((i < len) && ((i < (int)sizeof(pos)) && ((len - i - 1) < (int)sizeof(key)))) {
+        memcpy(pos, pos_key, i);
+        memcpy(key, pos_key+1, len);
+
+        return weather_query_first(pos, key, NULL, NULL);
+    }
+    return -1;
+}
+
+int weather_query_first(const char* pos, const char* key, weather_display_cb_t display_cb, void* arg)
+{
+    int ret = weather_query_internal(pos, key, display_cb, arg);
     if (ret == 0) {
-        ret = yos_nvs_save(YOS_NVS_WEATHER_INFO_NAMESPACE, weather_save_config, (void*)pos_key);
+        const char* args[2] = { pos , key };
+        ret = yos_nvs_save(YOS_NVS_WEATHER_INFO_NAMESPACE, weather_save_config, (void*)args);
     }
     return ret;
 }
 
 int weather_query(weather_display_cb_t display_cb, void* arg)
 {
-    char pos_key[64 + 64] = { 0 };
-    int ret = yos_nvs_load(YOS_NVS_WEATHER_INFO_NAMESPACE, weather_load_config, pos_key);
-    if (ret != 0) {
-        strcpy(pos_key, "116.39145,39.9073"); // BEIJING
-        strcpy(pos_key + 64, "c98d7cb82cdc49b7a20f8367e865868a"); // github
-        //return ret;
-    }
-
-    return weather_query_internal(pos_key, pos_key + 64, display_cb, arg);
+    char pos[64] = { 0 }, key[64] = { 0 };
+    weather_get_pos_key(pos, key);
+    return weather_query_internal(pos, key, display_cb, arg);
 }
 
 
@@ -97,11 +125,13 @@ static int json_parse_display(const char* str, weather_display_cb_t display_cb, 
         goto end;
     }
 
-    int i;
-    for (i = 0; weatcher_display_items[i]; i++) {
-        char* value = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(now_json, weatcher_display_items[i]));
+    if (display_cb != NULL) {
+        int i;
+        for (i = 0; weatcher_display_items[i]; i++) {
+            char* value = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(now_json, weatcher_display_items[i]));
 
-        display_cb(arg, i, value);
+            display_cb(arg, i, value);
+        }
     }
  
 end:
@@ -110,21 +140,19 @@ end:
 }
 
 static int weather_load_config(void* ctx, yos_nvs_read_cb_t read_cb, void* arg) {
-    char* city_pos = (char*)ctx;
-    char* api_key = city_pos + 64;
-    int ret = read_cb(arg, config_keys[0], city_pos, 64);
+    char** args = (char**)ctx;
+    int ret = read_cb(arg, config_keys[0], args[0], 64);
     if (ret == 0){
-        ret = read_cb(arg, config_keys[1], api_key, 64);
+        ret = read_cb(arg, config_keys[1], args[1], 64);
     }
     return ret;
 }
 
 static int weather_save_config(void* ctx, yos_nvs_write_cb_t write_cb, void* arg) {
-    char* city_pos = (char*)ctx;
-    char* api_key = city_pos + strlen(city_pos) + 1;
-    int ret = write_cb(arg, config_keys[0], city_pos);
+    const char** args = (const char**)ctx;
+    int ret = write_cb(arg, config_keys[0], args[0]);
     if (ret == 0) {
-        ret = write_cb(arg, config_keys[1], api_key);
+        ret = write_cb(arg, config_keys[1], args[1]);
     }
     return ret;
 }
