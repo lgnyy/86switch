@@ -3,10 +3,12 @@
 #include <time.h>
 #include "yos_nvs.h"
 #include "yos_wifi.h"
+#include "yos_httpd.h"
 #include "doMIoT.h"
 #include "doWeather.h"
 #include "doMain.h"
 #ifdef _WIN32
+#define asm(x)
 #define localtime_r(_Time, _Tm) localtime_s(_Tm, _Time)
 #endif
 
@@ -60,16 +62,17 @@ const char* devLights_did = "lumi.54ef441000339eca";
 const int devLights_siids[] = {3, 2, 4, 0};
 const int devLights_piid = 1;
 
-#define miot_send_cmd(cmd) miot_action("402807754", 5, 5, cmd)
 
-#define __SC(cmd) "\"" cmd "\",1"
-static const char* scene_command_list[] = { "",  __SC(SCENE1_NAME), __SC(SCENE2_NAME), __SC(SCENE3_NAME), __SC(SCENE4_NAME) };
-static const char* lightp_off_command_list[] = { __SC("关闭所有的灯") };
+static const char* scene_command_list[] = { "",  SCENE1_NAME, SCENE2_NAME, SCENE3_NAME, SCENE4_NAME };
+static const char* lightp_off_command_list[] = { "关闭所有的灯" };
 #endif  /* #if CONFIG_SWITCH86_XMIOT_ENABLE */
 
 static bool weather_task_status = false;
 static bool cmd_task_status = false;
 static lv_thread_t threadConfig, threadWeather, threadCmd;
+static const int httpd_port = 8123;
+static yos_httpd_handle_t httpd_server;
+static int32_t _httpd_uri_handler(void* req);
 
 static char* merge_two_strings(const char* s1, const char* s2);
 static void ui_load_cb(int32_t index);
@@ -80,8 +83,9 @@ static void miot_command(int op, const char* username, const char* passsword);
 static void miot_command(int op, const char* reserve1, const char* reserve2);
 #endif
 static void weather_command(const char* city_pos, const char* api_key);
-static void lightp_command(int32_t index, int32_t lightp, int32_t colorp);
-static void light_command(int32_t index, bool on);
+static void settings_command(const char* cmd, const char* param);
+static void light_bt_command(int32_t index, int32_t lightp, int32_t colorp);
+static void lights_command(int32_t index, bool on);
 static void scene_command(int32_t index, bool on);
 static void updateTime(lv_timer_t* timer);
 static int updateWeather(void* arg, int index, const char* value);
@@ -100,9 +104,10 @@ void ui_main(void)
     ui_ScreenC1_set_command_cb(wifi_command);
     ui_ScreenC2_set_command_cb(miot_command);
     ui_ScreenC3_set_command_cb(weather_command);
+    ui_ScreenC4_set_command_cb(settings_command);
 
-    ui_Screen10_set_command_cb(lightp_command);
-    ui_Screen11_set_command_cb(light_command);
+    ui_Screen10_set_command_cb(light_bt_command);
+    ui_Screen11_set_command_cb(lights_command);
     ui_Screen12_set_command_cb(scene_command);
 
     ui_init(ui_load_cb);
@@ -158,6 +163,16 @@ static int load_config_cb(void* ctx_, yos_nvs_read_cb_t read_cb, void* arg) {
     }
     return 0;
 }
+static void _new_ui_ScreenC2_set_config_with_index(int32_t index, const char* value) {
+    if (index == 0) {
+        char ts_str[32];
+        snprintf(ts_str, sizeof(ts_str), "expires in: %lld S", atoll(value) - time(NULL));
+        ui_ScreenC2_set_config_with_index(index, ts_str);
+        return;
+    }
+    ui_ScreenC2_set_config_with_index(index, value);
+}
+
 static void ui_load_cb(int32_t index)
 {
     if (index == -1) {
@@ -170,7 +185,7 @@ static void ui_load_cb(int32_t index)
         _temp_load_context_t ctx = { miot_get_ui_config_keys(), ui_ScreenC2_set_config_with_index };
         yos_nvs_load(YOS_NVS_XMIOT_INFO_NAMESPACE, load_config_cb, &ctx);
 #else
-        _temp_load_context_t ctx = { miot_get_ui_config_keys(), ui_ScreenC2_set_config_with_index };
+        _temp_load_context_t ctx = { miot_get_ui_config_keys(), _new_ui_ScreenC2_set_config_with_index };
         yos_nvs_load(YOS_NVS_MIOT_INFO_NAMESPACE, load_config_cb, &ctx);
 #endif
     }
@@ -178,13 +193,28 @@ static void ui_load_cb(int32_t index)
         _temp_load_context_t ctx = { weather_get_config_keys(), ui_ScreenC3_set_config_with_index };
         yos_nvs_load(YOS_NVS_WEATHER_INFO_NAMESPACE, load_config_cb, &ctx);
     }
+    else if (index == -4) {
+        char ip4[20] = { 0 }, expires_ts[32] = { 0 }, url[256];
+        yos_wifi_station_get_ip4(ip4);
+        miot_get_token_expires_ts(expires_ts);
+        snprintf(url, sizeof(url), "ip: %s, expires in: %lld S", ip4, atoll(expires_ts) - time(NULL));
+        ui_ScreenC4_set_config_with_index(0, url);
+
+        miot_gen_local_url(httpd_port, url, sizeof(url));
+        ui_ScreenC4_set_result(1, url);
+
+        if (httpd_server == NULL) {
+            httpd_server = yos_httpd_create(8123);
+            yos_register_uri_handler(httpd_server, "/api/*", _httpd_uri_handler, NULL);
+        }
+    }
 }
 
-static void lightp_command(int32_t index, int32_t lightp, int32_t colorp)
+static void light_bt_command(int32_t index, int32_t lightp, int32_t colorp)
 {
     _command_param_t* param = (_command_param_t*)malloc(sizeof(_command_param_t));
     if (param != NULL) {
-        param->cmd = "table_lamp";
+        param->cmd = "light_bt";
         param->index = index;
         param->lightp = lightp;
         param->colorp = colorp;
@@ -192,7 +222,7 @@ static void lightp_command(int32_t index, int32_t lightp, int32_t colorp)
     }
 }
 
-static void light_command(int32_t index, bool on)
+static void lights_command(int32_t index, bool on)
 {
     _command_param_t* param = (_command_param_t*)malloc(sizeof(_command_param_t));
     if (param != NULL) {
@@ -333,27 +363,23 @@ static void miot_command(int op, const char* reserve1, const char* reserve2)
         miot_gen_auth_url(url, sizeof(url));
         ui_ScreenC2_set_result(1, url);
 
-        lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, miot_login_task, 4096, NULL);
+        miot_get_access_token_start();
+        //lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, miot_login_task, 4096, NULL);
+    }
+    else if (op == 0x81) {
+        miot_get_access_token_stop();
     }
     else {
         miot_set_speaker_did(reserve1);
         //lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, miot_query_task, 4096, NULL);
     }
 }
-
-void miot_login_task(void* pvParameters)
-{
-    int ret = miot_get_access_token();
-
-    lv_lock();
-    ui_ScreenC2_set_result(0, (ret == 0) ? "Success" : "Failed");
-    lv_unlock();
-}
 #endif // #if CONFIG_SWITCH86_XMIOT_ENABLE
 
 void weather_query_task(void* pvParameters)
 {
-    int ret = weather_query_first((char*)pvParameters, updateWeather, NULL);
+    char* pos_key = (char*)pvParameters;
+    int ret = weather_query_first(pos_key, pos_key+strlen(pos_key)+1, updateWeather, NULL);
 
     lv_lock();
     ui_ScreenC3_set_result(0, (ret == 0) ? "Success" : "Failed");
@@ -370,6 +396,15 @@ static void weather_command(const char* city_pos, const char* api_key)
     }
 
     lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, weather_query_task, 4096, pos_key);
+}
+
+static void settings_command(const char* cmd, const char* param)
+{
+    // stop server
+    if (httpd_server != NULL) {
+        yos_httpd_destory(httpd_server);
+        httpd_server = NULL;
+    }
 }
 
 
@@ -414,7 +449,7 @@ static void cmd_task(void* arg)
 {
     _command_param_t* param = (_command_param_t*)arg;
 #if CONFIG_SWITCH86_XMIOT_ENABLE
-    if (strcmp(param->cmd, "table_lamp") == 0){
+    if (strcmp(param->cmd, "light_bt") == 0){
         if (param->lightp > 0) {
             char cmd[256];
             const char* fmt = lightp_on_command_list[1 + param->index];
@@ -429,33 +464,27 @@ static void cmd_task(void* arg)
         miot_send_cmd(param->lightp ? light_on_command_list[param->index] : light_off_command_list[param->index]);
     }
 #else  /* #if CONFIG_SWITCH86_XMIOT_ENABLE */
-    if (strcmp(param->cmd, "table_lamp") == 0) {
+    if (strcmp(param->cmd, "light_bt") == 0) {
         if (param->lightp > 0) {
-            char p[32], c[32];
-            const char* values[] = { "true", p, c, NULL };
-            snprintf(p, sizeof(p), "%ld", param->lightp);
-            snprintf(c, sizeof(c), "%ld", 1700 + 48 * param->colorp);
-            miot_set_props_piid(devLightp_did, devLightp_siid, devLightp_piids, values);
+            miot_set_props_light_bt(3, param->lightp, param->colorp);
         }
         else {
-            if (param->index < 0) {
-                miot_send_cmd(lightp_off_command_list[0]);
+            if (param->index < 0) { // special
+                miot_action_speaker_cmd(lightp_off_command_list[0]);
             }
-            else {
-                if (param->index == 0) {
-                    miot_set_props_siid(devLights_did, devLights_siids, devLights_piid, "false");
-                }
-                miot_set_prop(devLightp_did, devLightp_siid, devLightp_piids[0], "false");
-            }
+            else if (param->index == 0) { // special
+                miot_set_props_lights(0, 4, 0); // all
+            }else {
+                miot_set_props_lights(3, 1, 0); // only tablelamp
+             }
         }
     }
     else if (strcmp(param->cmd, "lights") == 0) {
-        const char* value = param->lightp ? "true" : "false";
         if (param->index == 0) {
-            miot_set_props_siid(devLights_did, devLights_siids, devLights_piid, value);
+            miot_set_props_lights(0, 3, param->lightp);
         }
         else {
-            miot_set_prop(devLights_did, devLights_siids[param->index - 1], devLights_piid, value);
+            miot_set_props_lights(param->index - 1, 1, param->lightp);
         }
     }
     else if (strcmp(param->cmd, "refresh_token") == 0) {
@@ -463,7 +492,7 @@ static void cmd_task(void* arg)
     }
 #endif  /* #if CONFIG_SWITCH86_XMIOT_ENABLE */
     else {
-        miot_send_cmd(param->cmd);
+        miot_action_speaker_cmd(param->cmd);
     }
 
     lv_lock();
@@ -490,4 +519,97 @@ static void sendCommand_param(_command_param_t* param)
     }
     cmd_task_status = true;
     lv_thread_init(&threadCmd, LV_THREAD_PRIO_MID, cmd_task, 0x2000, param);
+}
+
+
+static int32_t _httpd_uri_handler(void* req) {
+    uint32_t uri_len = 0;
+    const char* uri = yos_httpd_req_get_uri(req, &uri_len);
+
+    if (memcmp(uri, "/favicon.ico", 12) == 0) {
+        return yos_httpd_resp_send(req, "no icon", 7);
+    }
+    else if (memcmp(uri, "/api/get_expires_ts", 19) == 0) {
+        char expires_ts[32] = "0";
+        miot_get_token_expires_ts(expires_ts);
+        return yos_httpd_resp_send(req, expires_ts, strlen(expires_ts));
+    }
+    else if (memcmp(uri, "/api/gen_auth_code", 18) == 0) {
+        char auth_url[0x800];
+        if (miot_gen_auth_url(auth_url, sizeof(auth_url)) == 0) {
+            return yos_httpd_resp_send(req, auth_url, strlen(auth_url));
+        }
+    }
+    else if (memcmp(uri, "/api/webhook", 12) == 0) {
+        if (miot_get_access_token_with_uri(uri, uri_len) == 0) {
+            return yos_httpd_resp_send(req, "ok", 2);
+        }
+    }
+    else if (memcmp(uri, "/api/miot_cloud", 15) == 0) {
+        const char* url_path = NULL;
+        if (memcmp(uri + 15, "/get_homeinfos", 14) == 0) {
+            url_path = "/app/v2/homeroom/gethome";
+        }
+        else if (memcmp(uri + 15, "/get_devices", 12) == 0) {
+            url_path = "/app/v2/home/device_list_page";
+        }
+
+        uint32_t body_len = 0;
+        char* body = yos_httpd_req_recv_body(req, &body_len);
+        if (body != NULL) {
+            uint8_t* resp = NULL;
+            uint32_t resp_len = 0;
+            miot_api_post(url_path, (uint8_t*)body, body_len, &resp, &resp_len);
+            yos_httpd_req_body_free(req, body);
+            if (resp != NULL) {
+                yos_httpd_resp_set_hdr(req, "Content-Type", "application/json");
+                yos_httpd_resp_send(req, (char*)resp, resp_len);
+                miot_free(resp);
+                return 0;
+            }
+        }
+    }
+    else if (memcmp(uri, "/api/get_devices_config", 23) == 0) {
+        char lines[0x400] = { 0 };
+        if (miot_load_config_semicolons(lines, sizeof(lines)) == 0) {
+            return yos_httpd_resp_send(req, lines, strlen(lines));
+        }
+    }
+    else if (memcmp(uri, "/api/put_devices_config", 23) == 0) {
+        uint32_t body_len = 0;
+        char* body = yos_httpd_req_recv_body(req, &body_len);
+        if (body_len > 0) {
+            miot_save_config_semicolons(body, body_len);
+        }
+        yos_httpd_req_body_free(req, body);
+        return yos_httpd_resp_send(req, "ok", 2);
+    }
+    else if (memcmp(uri, "/api/get_qweather_config", 24) == 0) {
+        char pos_key[64 + 64] = { 0 };
+        if (weather_load_config_semicolon(pos_key, sizeof(pos_key)) == 0) {
+            return yos_httpd_resp_send(req, pos_key, strlen(pos_key));
+        }
+    }
+    else if (memcmp(uri, "/api/put_qweather_config", 24) == 0) {
+        uint32_t body_len = 0;
+        char* body = yos_httpd_req_recv_body(req, &body_len);
+        if (body_len > 0) {
+            weather_save_config_semicolon(body, body_len);
+        }
+        yos_httpd_req_body_free(req, body);
+        return yos_httpd_resp_send(req, "ok", 2);
+    }
+    else if (memcmp(uri, "/api/", 4) == 0) {
+#ifdef _WIN32
+        return yos_httpd_resp_send_file(req, "./api/index.html");
+#else
+        extern const uint8_t index_html_gz_start[] asm("_binary_index_html_gz_start");
+        extern const uint8_t index_html_gz_end[] asm("_binary_index_html_gz_end");
+        yos_httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
+        return yos_httpd_resp_send(req, (const char*)index_html_gz_start, index_html_gz_end - index_html_gz_start);
+#endif
+    }
+
+    yos_httpd_resp_send(req, "error", 5);
+    return 0;
 }
