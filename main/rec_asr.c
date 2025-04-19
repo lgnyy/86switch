@@ -53,17 +53,24 @@ static void send_speaker_cmd(const char* data, size_t cmd_len)
 }
 
 #else
-static int _load_config(void* ctx_,
-    int (*read_cb)(void* arg, const char* key, char* value, size_t vsize), void* arg) {
-    read_cb(arg, "speaker_did", (char*)ctx_, 32);
-    return read_cb(arg, "access_token", ((char*)ctx_)+32, 256);
-}
 static void send_speaker_cmd_task(void *pvParameters)
 {
     char* value = (char*)pvParameters;
-    char speaker_did_access_token[32+256] = {0};
-    if (yos_nvs_load(YOS_NVS_MIOT_INFO_NAMESPACE, _load_config, speaker_did_access_token) == 0){
-        miot_cloud_action(speaker_did_access_token+32, speaker_did_access_token, 5, 5, value, NULL);
+    char device_speaker[32], access_token[256];
+    yos_nvs_item_t items[] = {{"device_speaker", device_speaker, sizeof(device_speaker)}, {"access_token", access_token, sizeof(access_token)}};
+    if (yos_nvs_load_ex(YOS_NVS_MIOT_INFO_NAMESPACE, items, 2) == 0){
+        char* pos1 = strchr(device_speaker, ',');
+        int siid = 5, aiid = 5;
+        if (pos1 != NULL){
+            char* pos2 = strchr(pos1+1, ',');
+            *pos1++ = '\0';
+            siid = atoi(pos1);
+            if (pos2 != NULL){
+                *pos2++ = '\0';
+                aiid = atoi(pos2);
+            }
+        } 
+        miot_cloud_action(access_token, device_speaker, siid, aiid, value, NULL);
     }
 
     free(value);
@@ -257,15 +264,6 @@ static int xmiot_save_config(void* ctx, yos_nvs_write_cb_t write_cb, void* arg){
     return ret;
 }
 #endif
-#else
-#ifdef CONFIG_SWITCH86_MIOT_ACCESS_TOKEN
-static int miot_save_config(void* ctx, yos_nvs_write_cb_t write_cb, void* arg){
-    write_cb(arg, "access_token",  CONFIG_SWITCH86_MIOT_ACCESS_TOKEN);
-    write_cb(arg, "refresh_token", CONFIG_SWITCH86_MIOT_REFRESH_TOKEN);
-    write_cb(arg, "expires_ts",  CONFIG_SWITCH86_MIOT_EXPIRES_TS);
-    return write_cb(arg, "speaker_did",  CONFIG_SWITCH86_MIOT_SPEAKER_DID);
-}
-#endif
 #endif
 
 // 录音和语音识别初始化
@@ -282,7 +280,11 @@ esp_err_t rec_asr_init(void)
 #endif
 #else
 #ifdef CONFIG_SWITCH86_MIOT_ACCESS_TOKEN
-    yos_nvs_save(YOS_NVS_MIOT_INFO_NAMESPACE, miot_save_config, NULL);
+    yos_nvs_item_t items[] = {{"access_token", (char*)CONFIG_SWITCH86_MIOT_ACCESS_TOKEN, 0},
+        {"refresh_token", (char*)CONFIG_SWITCH86_MIOT_REFRESH_TOKEN, 0}, 
+        {"expires_ts", (char*)CONFIG_SWITCH86_MIOT_EXPIRES_TS, 0},
+         {"device_speaker", (char*)CONFIG_SWITCH86_MIOT_DEVICE_SPEAKER, 0}};
+    yos_nvs_save_ex(YOS_NVS_MIOT_INFO_NAMESPACE, items, 4);
 #endif
 #endif
 
