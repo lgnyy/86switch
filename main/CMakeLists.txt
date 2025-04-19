@@ -6,7 +6,8 @@ endif()
 idf_component_register(
     SRCS "86switch_main.c" "lvgl_port.c" "time_sync.c"  "rec_asr.c" ${UI_SRC_FILES}
     INCLUDE_DIRS "."
-    REQUIRES nvs_flash esp_wifi esp_event json)
+    REQUIRES nvs_flash esp_wifi esp_event json
+    EMBED_FILES "index.html.gz")
 
 idf_component_get_property(lvgl_lib lvgl__lvgl COMPONENT_LIB)
 target_compile_options(${lvgl_lib} PRIVATE -Wno-format)
