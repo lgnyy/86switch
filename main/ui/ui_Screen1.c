@@ -89,7 +89,7 @@ lv_obj_t* ui_Screen1_screen_init(void)
 
     /*Create a list*/
     lv_obj_t* list1 = lv_list_create(ui_Screen1);
-    lv_obj_set_size(list1, 160, 150);
+    lv_obj_set_size(list1, 160, 30+40*4);
     lv_obj_align(list1, LV_ALIGN_TOP_RIGHT, 0, 50);
     lv_obj_add_flag(list1, LV_OBJ_FLAG_HIDDEN);
     /*Add buttons to the list*/
@@ -100,6 +100,8 @@ lv_obj_t* ui_Screen1_screen_init(void)
     lv_obj_add_event_cb(btn, ui_event_config_list, LV_EVENT_CLICKED, (void*)-2);
     btn = lv_list_add_button(list1, LV_SYMBOL_GPS, "Weather");
     lv_obj_add_event_cb(btn, ui_event_config_list, LV_EVENT_CLICKED, (void*)-3);
+    btn = lv_list_add_button(list1, LV_SYMBOL_SETTINGS, "Settings");
+    lv_obj_add_event_cb(btn, ui_event_config_list, LV_EVENT_CLICKED, (void*)-4);
 
     ui_create_gesture_image(ui_Screen1, _UI_SCREEN_INDEX);
 
