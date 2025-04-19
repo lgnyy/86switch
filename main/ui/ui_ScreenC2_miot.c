@@ -1,7 +1,6 @@
 
 
 #include "ui.h"
-#include <time.h>
 
 #if !(CONFIG_SWITCH86_XMIOT_ENABLE)
 #define _UI_SCREEN_INDEX -2
@@ -106,14 +105,7 @@ void ui_ScreenC2_set_config_with_index(int32_t index, const char* value)
     lv_obj_t* screenC2 = ui_screen_get(_UI_SCREEN_INDEX);
     lv_obj_t* textarea1 = lv_obj_get_child_by_type(screenC2, obj_index, &lv_textarea_class);
  
-    if  (obj_index == 0){
-        char ts_str[32];
-        snprintf(ts_str, sizeof(ts_str), "expires in: %lld S", atoll(value) - time(NULL));
-        lv_textarea_set_text(textarea1, ts_str);
-    }
-    else {
-        lv_textarea_set_text(textarea1, value);
-    }
+    lv_textarea_set_text(textarea1, value);
 }
 
 void ui_ScreenC2_set_result(int32_t op, const char* result)
@@ -141,7 +133,7 @@ void ui_ScreenC2_set_result(int32_t op, const char* result)
 static void ui_modify_button_flag(lv_obj_t* parent, bool hidden)
 {
     uint32_t n = lv_obj_get_child_count_by_type(parent, &lv_button_class);
-    for (uint32_t i = 0; i < n; i++) {
+    for (uint32_t i = 1; i < n; i++) {
         lv_obj_t* button1 = lv_obj_get_child_by_type(parent, i, &lv_button_class);
         if (hidden) {
             lv_obj_add_flag(button1, LV_OBJ_FLAG_HIDDEN);
@@ -160,6 +152,7 @@ static void ui_event_textarea_focused(lv_event_t* e)
 
 static void ui_event_button_close(lv_event_t* e) 
 {
+    _command_cb(0x81, NULL, NULL);
     ui_screen_del(_UI_SCREEN_INDEX);
     ui_screen_change(0);
 }
