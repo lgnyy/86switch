@@ -54,15 +54,6 @@ static const char* scene_command_list[] = {"", SCENE1_NAME, SCENE2_NAME, SCENE3_
 
 #else  /* #if CONFIG_SWITCH86_XMIOT_ENABLE */
 
-const char* devLightp_did = "392563023";
-const int devLightp_siid = 2;
-const int devLightp_piids[] = {1, 2, 3, 0};
-
-const char* devLights_did = "lumi.54ef441000339eca";
-const int devLights_siids[] = {3, 2, 4, 0};
-const int devLights_piid = 1;
-
-
 static const char* scene_command_list[] = { "",  SCENE1_NAME, SCENE2_NAME, SCENE3_NAME, SCENE4_NAME };
 static const char* lightp_off_command_list[] = { "关闭所有的灯" };
 #endif  /* #if CONFIG_SWITCH86_XMIOT_ENABLE */
@@ -205,7 +196,7 @@ static void ui_load_cb(int32_t index)
 
         if (httpd_server == NULL) {
             httpd_server = yos_httpd_create(8123);
-            yos_register_uri_handler(httpd_server, "/api/*", _httpd_uri_handler, NULL);
+            yos_httpd_register_uri_handler(httpd_server, "/api/*", _httpd_uri_handler, NULL);
         }
     }
 }
@@ -365,6 +356,12 @@ static void miot_command(int op, const char* reserve1, const char* reserve2)
 
         miot_get_access_token_start();
         //lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, miot_login_task, 4096, NULL);
+    }
+    else if (op == 3) {
+        miot_mips_sub_start();
+    }
+    else if (op == 4) {
+        miot_mips_sub_stop();
     }
     else if (op == 0x81) {
         miot_get_access_token_stop();

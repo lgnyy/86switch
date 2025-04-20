@@ -32,5 +32,8 @@ int miot_action_speaker_cmd(const char* value);
 int miot_set_props_lights(int offset, int count, int value);
 int miot_set_props_light_bt(int offset, int brightness, int temperature);
 
+int miot_mips_sub_start(void);
+int miot_mips_sub_stop(void);
+
 #endif  /* #if CONFIG_SWITCH86_XMIOT_ENABLE */
 

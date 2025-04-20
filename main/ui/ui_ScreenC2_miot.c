@@ -7,13 +7,13 @@
 
 LV_IMG_DECLARE(ui_img_logo_png);   // assets\logo.png
 
-static void (*_command_cb)(int op, const char* username, const char* passsword);
+static void (*_command_cb)(int op, const char* reserve1, const char* reserve2);
 static void ui_modify_button_flag(lv_obj_t* parent, bool hidden);
 static void ui_event_textarea_focused(lv_event_t* e);
 static void ui_event_button_close(lv_event_t* e);
 static void ui_event_button_login(lv_event_t* e);
 static void ui_event_button_query(lv_event_t* e);
-
+static void ui_event_button_mqtt(lv_event_t* e);
 
 lv_obj_t* ui_ScreenC2_screen_init(void)
 {
@@ -43,14 +43,14 @@ lv_obj_t* ui_ScreenC2_screen_init(void)
 
     lv_obj_t* textarea1 = lv_textarea_create(screenC2);
     lv_obj_set_size(textarea1, 292, LV_SIZE_CONTENT);
-    lv_obj_align(textarea1, LV_ALIGN_CENTER, -52, -90);
+    lv_obj_align(textarea1, LV_ALIGN_CENTER, -52, -128);
     lv_textarea_set_placeholder_text(textarea1, "expires_ts");
     lv_textarea_set_one_line(textarea1, true);
     lv_obj_set_style_text_font(textarea1, &lv_font_montserrat_20, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     lv_obj_t* button2 = lv_button_create(screenC2);
     lv_obj_set_size(button2, 85, 41);
-    lv_obj_align(button2, LV_ALIGN_CENTER, 151, -90);
+    lv_obj_align(button2, LV_ALIGN_CENTER, 151, -128);
     lv_obj_add_flag(button2, LV_OBJ_FLAG_SCROLL_ON_FOCUS);   /// Flags
     lv_obj_t* label3 = lv_label_create(button2);
     lv_label_set_text(label3, "Token");
@@ -59,19 +59,28 @@ lv_obj_t* ui_ScreenC2_screen_init(void)
 
     lv_obj_t* textarea3 = lv_textarea_create(screenC2);
     lv_obj_set_size(textarea3, 292, LV_SIZE_CONTENT);
-    lv_obj_align(textarea3, LV_ALIGN_CENTER, -52, 6);
+    lv_obj_align(textarea3, LV_ALIGN_CENTER, -52, -61);
     lv_textarea_set_placeholder_text(textarea3, "Wifi Speaker DID");
     lv_textarea_set_one_line(textarea3, true);
     lv_obj_set_style_text_font(textarea3, &lv_font_montserrat_20, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     lv_obj_t* button3 = lv_button_create(screenC2);
     lv_obj_set_size(button3, 85, 41);
-    lv_obj_align(button3, LV_ALIGN_CENTER, 151, 6);
+    lv_obj_align(button3, LV_ALIGN_CENTER, 151, -61);
     lv_obj_add_flag(button3, LV_OBJ_FLAG_SCROLL_ON_FOCUS);   /// Flags
     lv_obj_t* label4 = lv_label_create(button3);
     lv_label_set_text(label4, "Modify"); // Query
     lv_obj_set_align(label4, LV_ALIGN_CENTER);
     lv_obj_set_style_text_font(label4, &ui_font_Font4, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_t* button4 = lv_button_create(screenC2);
+    lv_obj_set_size(button4, 105, 41);
+    lv_obj_align(button4, LV_ALIGN_CENTER, 131, 6);
+    lv_obj_add_flag(button4, LV_OBJ_FLAG_SCROLL_ON_FOCUS);   /// Flags
+    lv_obj_t* label4_1 = lv_label_create(button4);
+    lv_label_set_text(label4_1, "MQTT On");
+    lv_obj_set_align(label4_1, LV_ALIGN_CENTER);
+    lv_obj_set_style_text_font(label4_1, &ui_font_Font4, LV_PART_MAIN | LV_STATE_DEFAULT);
 
 
     lv_obj_t* label5 = lv_label_create(screenC2);
@@ -90,6 +99,7 @@ lv_obj_t* ui_ScreenC2_screen_init(void)
     lv_obj_add_event_cb(button1, ui_event_button_close, LV_EVENT_CLICKED, NULL);
     lv_obj_add_event_cb(button2, ui_event_button_login, LV_EVENT_CLICKED, NULL);
     lv_obj_add_event_cb(button3, ui_event_button_query, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(button4, ui_event_button_mqtt, LV_EVENT_CLICKED, NULL);
 
      return screenC2;
 }
@@ -178,5 +188,18 @@ static void ui_event_button_query(lv_event_t* e)
     //lv_label_set_text(label3, "Query...");
     //ui_modify_button_flag(screenC2, true);
     _command_cb(2, speaker_did, NULL);
+}
+
+static void ui_event_button_mqtt(lv_event_t* e)
+{
+    lv_obj_t* label = lv_obj_get_child(lv_event_get_target(e), 0);
+    if (lv_strcmp(lv_label_get_text(label), "MQTT On") == 0) {
+        lv_label_set_text(label, "MQTT Off");
+        _command_cb(3, "on", NULL);
+    }
+    else {
+        lv_label_set_text(label, "MQTT On");
+        _command_cb(4, "off", NULL);
+    }
 }
 #endif // #if !(CONFIG_SWITCH86_XMIOT_ENABLE)
