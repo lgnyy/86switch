@@ -9,6 +9,11 @@
 #include "driver/gpio.h"
 #include "driver/i2c_master.h"
 #include "driver/spi_master.h"
+#if CONFIG_SWITCH86_LOG_SVR_ENABLE
+#include "lwip/err.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+#endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_lcd_panel_ops.h"
@@ -260,6 +265,29 @@ static void esp_lcd_sleep(bool sleep)
 	gpio_set_level(SWITCH86_PIN_NUM_BK_LIGHT, sleep? SWITCH86_LCD_BK_LIGHT_OFF_LEVEL : SWITCH86_LCD_BK_LIGHT_ON_LEVEL);
 }
 
+#if CONFIG_SWITCH86_LOG_SVR_ENABLE
+static int udp_log_write(const char* format, va_list args) {
+    static int udp_socket = -1;
+    static struct sockaddr_in dest_addr;
+    if (udp_socket == -1){
+        udp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+        if (udp_socket < 0) {
+            ESP_LOGE("UDP_LOG", "Failed to create socket: errno %d", errno);
+            return 0;
+        }
+        dest_addr.sin_addr.s_addr = inet_addr(CONFIG_SWITCH86_LOG_SVR_HOST);
+        dest_addr.sin_family = AF_INET;
+        dest_addr.sin_port = htons(CONFIG_SWITCH86_LOG_SVR_PORT);
+    }
+
+    char buffer[512];
+    int len = vsnprintf(buffer, sizeof(buffer), format, args);
+    
+    sendto(udp_socket, buffer, strlen(buffer), 0,  (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+    return len; // over 512 bytes will be truncated
+}
+#endif
+
 void app_main()
 {
     ESP_LOGI(TAG, "begin esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
@@ -289,7 +317,11 @@ void app_main()
 		lvgl_port_set_lcd_sleep_cb(esp_lcd_sleep);
     }
 
-    yos_wifi_station_init(); // 必须第一个运行   
+    if (yos_wifi_station_init() == ESP_OK){ // 必须第一个运行   
+#if CONFIG_SWITCH86_LOG_SVR_ENABLE
+        esp_log_set_vprintf(udp_log_write);
+#endif
+    } 
 
     extern esp_err_t rec_asr_init(void);
     extern esp_err_t time_sync_init(void);   

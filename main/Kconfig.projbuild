@@ -138,4 +138,27 @@ menu "Switch86 Configuration"
                 Set MIOT password.
     endmenu
 
+   menu "LOG Configuration"
+        config SWITCH86_LOG_SVR_ENABLE
+            bool "Enable LOG Configuration"
+            default "y"
+            help
+                Enable this option if you wish to LOG Configuration.
+
+        config SWITCH86_LOG_SVR_HOST
+            depends on SWITCH86_LOG_SVR_ENABLE
+            string "HOST"
+            default "192.168.3.27"
+            help
+                Set udp log server host.
+
+        config SWITCH86_LOG_SVR_PORT
+            depends on SWITCH86_LOG_SVR_ENABLE
+            int "PORT"
+            default 43333
+            help
+                Set udp log server port.
+
+    endmenu
+
 endmenu
