@@ -1,4 +1,6 @@
 # 86switch
+详细介绍参考 [Go DeepWiki](https://deepwiki.com/lgnyy/86switch)
+
 ## 编译
 运行"ESP-IDF 5.3 CMD"
 ```sh
