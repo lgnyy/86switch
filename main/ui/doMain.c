@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include "yos_sys.h"
 #include "yos_nvs.h"
 #include "yos_wifi.h"
 #include "yos_httpd.h"
@@ -397,10 +398,15 @@ static void weather_command(const char* city_pos, const char* api_key)
 
 static void settings_command(const char* cmd, const char* param)
 {
-    // stop server
-    if (httpd_server != NULL) {
-        yos_httpd_destory(httpd_server);
-        httpd_server = NULL;
+    if (strcmp(cmd, "reboot") == 0) {
+        yos_sys_restart();
+    }
+    else {
+        // stop server
+        if (httpd_server != NULL) {
+            yos_httpd_destory(httpd_server);
+            httpd_server = NULL;
+        }
     }
 }
 

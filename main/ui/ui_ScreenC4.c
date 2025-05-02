@@ -6,6 +6,7 @@
 
 static void (*_command_cb)(const char* cmd, const char* param);
 static void ui_event_button_close(lv_event_t* e);
+static void ui_event_button_reboot(lv_event_t* e);
 
 
 lv_obj_t* ui_ScreenC4_screen_init(void)
@@ -33,6 +34,15 @@ lv_obj_t* ui_ScreenC4_screen_init(void)
     lv_obj_set_align(label2, LV_ALIGN_CENTER);
     lv_obj_set_style_text_font(label2, &ui_font_Font4, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+    lv_obj_t* button2 = lv_button_create(screenC4);
+    lv_obj_set_size(button2, 85, 41);
+    lv_obj_align(button2, LV_ALIGN_CENTER, -179, -208);
+    lv_obj_add_flag(button2, LV_OBJ_FLAG_SCROLL_ON_FOCUS);   /// Flags
+    lv_obj_t* label2_1 = lv_label_create(button2);
+    lv_label_set_text(label2_1, "Reboot");
+    lv_obj_set_align(label2_1, LV_ALIGN_CENTER);
+    lv_obj_set_style_text_font(label2_1, &ui_font_Font4, LV_PART_MAIN | LV_STATE_DEFAULT);
+
 
     lv_obj_t* label3 = lv_label_create(screenC4);
     lv_label_set_text(label3, "Ready");
@@ -40,7 +50,8 @@ lv_obj_t* ui_ScreenC4_screen_init(void)
     lv_obj_set_style_text_font(label3, &ui_font_Font4, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     lv_obj_add_event_cb(button1, ui_event_button_close, LV_EVENT_CLICKED, NULL);
-  
+    lv_obj_add_event_cb(button2, ui_event_button_reboot, LV_EVENT_CLICKED, NULL);
+
      return screenC4;
 }
 
@@ -73,4 +84,9 @@ static void ui_event_button_close(lv_event_t* e)
     _command_cb("stop", NULL);
     ui_screen_del(_UI_SCREEN_INDEX);
     ui_screen_change(0);
+}
+
+static void ui_event_button_reboot(lv_event_t* e)
+{
+    _command_cb("reboot", NULL);
 }
