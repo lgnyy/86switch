@@ -323,10 +323,10 @@ void app_main()
 #endif
     } 
 
-    extern esp_err_t rec_asr_init(void);
+    extern esp_err_t rec_asr_init(void (*sleep_cb)(bool sleep));
     extern esp_err_t time_sync_init(void);   
     time_sync_init();
-    rec_asr_init();
+    rec_asr_init(esp_lcd_sleep);
     
     ESP_LOGI(TAG, "end esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
  }

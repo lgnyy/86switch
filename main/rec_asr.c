@@ -18,6 +18,7 @@
 #if CONFIG_SWITCH86_MIC_INMP411_ENABLE
 
 static const char *TAG = "REC_ASR";
+static void (*_lcd_sleep_cb)(bool sleep);
 
 
 // 用新任务执行音箱命令
@@ -111,7 +112,12 @@ static void asr_result_process(const char* data_ptr, int data_len)
                     send_speaker_cmd(startptr+6, clen-6);
                 }
                 else if((memcmp(startptr, "打开", 6) == 0) || (memcmp(startptr, "关闭", 6) == 0)){
-                    send_speaker_cmd(startptr, clen);
+                    if (memcmp(startptr+6, "夜灯", 6) == 0){
+                        _lcd_sleep_cb(memcmp(startptr, "关闭", 6) == 0);
+                    }
+                    else {
+                        send_speaker_cmd(startptr, clen);
+                    }
                 }
             }
         }
@@ -267,8 +273,9 @@ static int xmiot_save_config(void* ctx, yos_nvs_write_cb_t write_cb, void* arg){
 #endif
 
 // 录音和语音识别初始化
-esp_err_t rec_asr_init(void)
+esp_err_t rec_asr_init(void (*sleep_cb)(bool sleep))
 {
+    _lcd_sleep_cb = sleep_cb;
 #if CONFIG_SWITCH86_XMIOT_ENABLE   
 #if !CONFIG_SWITCH86_UI_ENABLE // 无UI，根据配置登录小米云服务，并保存token等
     void* ctx = xmiot_service_context_create();
