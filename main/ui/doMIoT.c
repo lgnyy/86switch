@@ -8,6 +8,7 @@
 #include "xmiot_account.h"
 #include "xmiot_service.h"
 #else
+#include "cJSON.h"
 #include "yos_wifi.h"
 #include "yos_httpd.h"
 #include "yos_mqtt.h"
@@ -365,6 +366,13 @@ int miot_set_props_light_bt(int offset, int brightness, int temperature) {
     return ret;
 }
 
+
+static void (*_set_light_status_cb)(int32_t index, bool on);
+void miot_mips_sub_set_light_status_cb(void (*set_light_status_cb)(int32_t index, bool on))
+{
+    _set_light_status_cb = set_light_status_cb;
+}
+
 static int32_t _mqtt_event_handler(void* ev) {
     if (yos_mqtt_event_is_connected(ev)) {
         char device_lights[1024];
@@ -389,6 +397,36 @@ static int32_t _mqtt_event_handler(void* ev) {
         char* data = yos_mqtt_event_get_data(ev, &data_len);
         char* topic = yos_mqtt_event_get_topic(ev, &topic_len);
         printf("mqtt msg: %.*s, topic:  %.*s\n", data_len, data, topic_len, topic);
+    
+        if (_set_light_status_cb != NULL) {
+            if (data[data_len]) {
+                data[data_len] = '\0';
+            }
+            cJSON* resp = cJSON_Parse(data);
+            if (resp != NULL) {
+                cJSON* params = cJSON_GetObjectItemCaseSensitive(resp, "params");
+                cJSON* value = cJSON_GetObjectItemCaseSensitive(params, "value");
+                char* did = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(params, "did"));
+                cJSON* siid = cJSON_GetObjectItemCaseSensitive(params, "siid");
+                cJSON* piid = cJSON_GetObjectItemCaseSensitive(params, "piid");
+                if ((value != NULL) && (did != NULL) && (siid != NULL) && (piid != NULL)) {
+                    char changed_light[256], device_lights[1024];
+                    snprintf(changed_light, sizeof(changed_light), "%s,%d,%d", did, siid->valueint, piid->valueint);
+                    yos_nvs_item_t items[1] = { {"device_lights",device_lights,sizeof(device_lights)} };
+                    if (yos_nvs_load_ex(YOS_NVS_MIOT_INFO_NAMESPACE, items, 1) == 0) {
+                        char* light_list[4];
+                        _string_split(device_lights, ';', light_list, 4);
+                        for (int t = 0; t < 4; t++) {
+                            if (strcmp(light_list[t], changed_light) == 0) {
+                                _set_light_status_cb(1+t, value->valueint);
+                                break;
+                            }
+                        }
+                    }
+                }
+                cJSON_free(resp);
+            }
+        }
     }
     return 0;
 }

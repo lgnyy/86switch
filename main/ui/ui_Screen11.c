@@ -3,8 +3,8 @@
 #include "ui.h"
 
 #define _UI_SCREEN_INDEX 2
-#define LIGHT1_NAME "筒灯"
-#define LIGHT2_NAME "吸顶灯"
+#define LIGHT1_NAME "吸顶灯"
+#define LIGHT2_NAME "筒灯"
 #define LIGHT3_NAME "灯带"
 
 LV_IMG_DECLARE(ui_img_s2_back2_png);   // assets\s3\back3.png
@@ -130,6 +130,22 @@ void ui_Screen11_set_command_cb(void (*command_cb)(int32_t index, bool on))
     _command_cb = command_cb;
 }
 
+void ui_Screen11_set_light_status(int32_t index, bool on)
+{
+#if !(UI_NO_FEEDBACK_MODE)
+    if ((index >= 1) && (index <= 3)) {
+        lv_lock();
+        lv_obj_t* screen11 = ui_screen_get(_UI_SCREEN_INDEX);
+        lv_obj_t* imagep = lv_obj_get_child_by_type(screen11, 2 + index, &lv_image_class);
+        lv_obj_t* target = lv_obj_get_child_by_type(imagep, 1, &lv_image_class);
+        lv_obj_t* other = lv_obj_get_child_by_type(imagep, 0, &lv_image_class);
+
+        lv_image_set_src(target, on ? &ui_img_s3_switch1_on_png : &ui_img_s3_switch1_off_png);
+        lv_image_set_src(other, on ? &ui_img_s3_light1_on_png : &ui_img_s3_light1_off_png);
+        lv_unlock();
+    }
+#endif
+}
 
 static void ui_event_All_eud(lv_event_t* e)
 {

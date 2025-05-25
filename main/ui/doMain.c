@@ -104,6 +104,8 @@ void ui_main(void)
 
     ui_init(ui_load_cb);
 
+    miot_mips_sub_set_light_status_cb(ui_Screen11_set_light_status);
+
     int32_t index = (yos_nvs_check(YOS_NVS_WIFI_INFO_NAMESPACE) == 0) ? 0 : -1;
     lv_screen_load(ui_screen_get(index));
 

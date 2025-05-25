@@ -1,3 +1,5 @@
+#include <stdint.h>
+#include <stdbool.h>
 
 const char** miot_get_ui_config_keys(void);
 
@@ -32,6 +34,7 @@ int miot_action_speaker_cmd(const char* value);
 int miot_set_props_lights(int offset, int count, int value);
 int miot_set_props_light_bt(int offset, int brightness, int temperature);
 
+void miot_mips_sub_set_light_status_cb(void (*set_light_status_cb)(int32_t index, bool on));
 int miot_mips_sub_start(void);
 int miot_mips_sub_stop(void);
 

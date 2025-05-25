@@ -52,6 +52,7 @@ void ui_Screen10_set_command_cb(void (*command_cb)(int32_t index, int32_t lightp
 // SCREEN: ui_Screen11
 lv_obj_t* ui_Screen11_screen_init(void);
 void ui_Screen11_set_command_cb(void (*command_cb)(int32_t index, bool on));
+void ui_Screen11_set_light_status(int32_t index, bool on);
 
 
 // SCREEN: ui_Screen12
