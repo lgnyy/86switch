@@ -239,7 +239,7 @@ static void display_dyn_img_task(void *pvParameters){
     char url[64];
     int id = 1 + (((int)esp_timer_get_time()) % 50);
     if (id <= 28) {
-        snprintf(url, sizeof(url), "http://192.168.3.27/zic/%d.jpeg", id);
+        snprintf(url, sizeof(url), "%s/%d.jpeg", CONFIG_SWITCH86_LVGL_PORT_IMG_URL, id);
         yos_http_static_request(url, NULL, NULL, NULL, 0, &(mem_fs_buf.base), &(mem_fs_buf.size));
         if (mem_fs_buf.base != NULL) {
             lv_lock();
@@ -250,7 +250,7 @@ static void display_dyn_img_task(void *pvParameters){
         }
     }
     else {
-        snprintf(url, sizeof(url), "http://192.168.3.27/zic/g%d.gif", id-28);
+        snprintf(url, sizeof(url), "%s/g%d.gif", CONFIG_SWITCH86_LVGL_PORT_IMG_URL, id-28);
         yos_http_static_request(url, NULL, NULL, NULL, 0, &(mem_fs_buf.base), &(mem_fs_buf.size));
         if (mem_fs_buf.base != NULL) {
             lv_lock();

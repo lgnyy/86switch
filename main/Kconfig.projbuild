@@ -64,6 +64,12 @@ menu "Switch86 Configuration"
             default 48
             help
                 Height of LVGL buffer. The width of the buffer is the same as that of the LCD.
+
+        config SWITCH86_LVGL_PORT_IMG_URL
+            string "http url"
+            default "http://192.168.3.27/zic"
+            help
+                Set image service address.                
     endmenu
 
     menu "I2S MEMS MIC Configuration"
