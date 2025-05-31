@@ -1,0 +1,306 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="cJSON">
+      <UniqueIdentifier>{ba3aa2c8-ecd3-4acc-a958-66c5cef1e954}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="idf_component">
+      <UniqueIdentifier>{287bb85f-452c-4aed-8d99-ef49a226a17b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="idf_component\xmiot">
+      <UniqueIdentifier>{9f663dd3-565a-4221-ac59-ab476d476ada}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="idf_component\yos">
+      <UniqueIdentifier>{31b704c9-4ceb-46bc-8bd6-412bd19d472d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ui">
+      <UniqueIdentifier>{a94f11ea-2c53-4c25-929c-49bdb61a8868}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="zlib">
+      <UniqueIdentifier>{bf10214b-442d-49ac-9baa-28b56d5a7223}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="idf_component\miot">
+      <UniqueIdentifier>{0ae77a8d-2b94-406f-ac30-c0b849940c7a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="t86switch.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\idf_component\yos\yos_uri.c">
+      <Filter>idf_component\yos</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\idf_component\yos\src_win32\yos_http.c">
+      <Filter>idf_component\yos</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s1_sunny_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s1_hu_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s1_cut2_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s1_cut1_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s1_back1_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_font_Font4.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_font_Font3.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_font_Font2.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_font_Font1.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_Screen13.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_Screen12.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_Screen11.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_Screen10.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_Screen2.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_Screen1.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s5_w_circle_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s5_sec_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s5_min_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s5_hour_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s5_c_circle_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s5_back5_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s4_mode2_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s4_mode1_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s3_switch1_on_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s3_switch1_off_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s3_switch_3_on_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s3_light1_on_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s3_light1_off_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s3_back3_2_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s3_back3_1_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s3_b_switch_on_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s3_b_switch_off_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s3_b_light_on_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s3_b_light_off_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s2_switch2_on_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s2_switch2_off_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s2_light_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s2_color_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s2_back2_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s1_wind_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_img_s1_tmp_png.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\doMain.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\gzlib.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\gzread.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\gzwrite.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\infback.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\inffast.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\inflate.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\inftrees.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\trees.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\uncompr.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\zutil.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\adler32.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\compress.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\crc32.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\deflate.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\managed_components\espressif__zlib\zlib\gzclose.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\doWeather.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\doMIoT.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_ScreenC2.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_ScreenC3.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\idf_component\yos\src_win32\yos_nvs.c">
+      <Filter>idf_component\yos</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\idf_component\yos\src_win32\yos_wifi.c">
+      <Filter>idf_component\yos</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\idf_component\miot\miot_cloud.c">
+      <Filter>idf_component\miot</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_ScreenC2_miot.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\idf_component\yos\src_win32\yos_httpd.c">
+      <Filter>idf_component\yos</Filter>
+    </ClCompile>
+    <ClCompile Include="mongoose.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\main\ui\ui_ScreenC4.c">
+      <Filter>ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\idf_component\yos\src_win32\yos_mqtt.c">
+      <Filter>idf_component\yos</Filter>
+    </ClCompile>
+    <ClCompile Include="mg_tls_wintls.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\idf_component\yos\src_win32\yos_sys.c">
+      <Filter>idf_component\yos</Filter>
+    </ClCompile>
+    <ClCompile Include="cJSON\cJSON_Utils.c">
+      <Filter>cJSON</Filter>
+    </ClCompile>
+    <ClCompile Include="cJSON\cJSON.c">
+      <Filter>cJSON</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\idf_component\yos\include\yos_http.h">
+      <Filter>idf_component\yos</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\idf_component\yos\include\yos_uri.h">
+      <Filter>idf_component\yos</Filter>
+    </ClInclude>
+    <ClInclude Include="..\managed_components\espressif__zlib\zlib\gzguts.h">
+      <Filter>zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\main\ui\doMain.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\main\ui\doWeather.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\main\ui\doMIoT.h">
+      <Filter>ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\idf_component\yos\include\yos_wifi.h">
+      <Filter>idf_component\yos</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\idf_component\yos\include\yos_nvs.h">
+      <Filter>idf_component\yos</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\idf_component\miot\miot_cloud.h">
+      <Filter>idf_component\miot</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\idf_component\yos\include\yos_httpd.h">
+      <Filter>idf_component\yos</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\idf_component\yos\include\yos_mqtt.h">
+      <Filter>idf_component\yos</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

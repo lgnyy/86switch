@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30907.101
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "t86switch", "t86switch.vcxproj", "{F76BAA3D-836E-4C15-8FA6-F9AC3D05909A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F76BAA3D-836E-4C15-8FA6-F9AC3D05909A}.Debug|x86.ActiveCfg = Debug|Win32
+		{F76BAA3D-836E-4C15-8FA6-F9AC3D05909A}.Debug|x86.Build.0 = Debug|Win32
+		{F76BAA3D-836E-4C15-8FA6-F9AC3D05909A}.Release|x86.ActiveCfg = Release|Win32
+		{F76BAA3D-836E-4C15-8FA6-F9AC3D05909A}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B36F214F-9B66-4378-BC1C-778F27529B02}
+	EndGlobalSection
+EndGlobal
