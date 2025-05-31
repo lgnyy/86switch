@@ -17,11 +17,13 @@ static void ui_event_button_mqtt(lv_event_t* e);
 
 lv_obj_t* ui_ScreenC2_screen_init(void)
 {
-    lv_obj_t* screenC2 = lv_obj_create(NULL);
-    lv_obj_remove_flag(screenC2, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
-    lv_obj_set_style_bg_color(screenC2, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT );
-    lv_obj_set_style_bg_opa(screenC2, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-
+    static lv_obj_t* screenC2 = NULL;
+    if (screenC2 == NULL) {
+        screenC2 = lv_obj_create(NULL);
+        lv_obj_remove_flag(screenC2, LV_OBJ_FLAG_SCROLLABLE);    /// Flags
+        lv_obj_set_style_bg_color(screenC2, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(screenC2, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
 
     lv_obj_t* panel1 = lv_obj_create(screenC2);
     lv_obj_set_size(panel1, 492, 66);

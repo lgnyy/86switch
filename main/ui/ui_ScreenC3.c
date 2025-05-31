@@ -15,11 +15,13 @@ static void ui_event_Key_Ok(lv_event_t* e);
 
 lv_obj_t* ui_ScreenC3_screen_init(void)
 {
-    lv_obj_t* screenC3 = lv_obj_create(NULL);
-    lv_obj_remove_flag(screenC3, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
-    lv_obj_set_style_bg_color(screenC3, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT );
-    lv_obj_set_style_bg_opa(screenC3, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-
+    static lv_obj_t* screenC3 = NULL;
+    if (screenC3 == NULL) {
+        screenC3 = lv_obj_create(NULL);
+        lv_obj_remove_flag(screenC3, LV_OBJ_FLAG_SCROLLABLE);    /// Flags
+        lv_obj_set_style_bg_color(screenC3, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(screenC3, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
 
     lv_obj_t* panel1 = lv_obj_create(screenC3);
     lv_obj_set_size(panel1, 492, 66);
@@ -162,6 +164,7 @@ static void degree_convert(char* degree, char* min, char* sec) {
 
 static void ui_event_Button1(lv_event_t* e) 
 {
+    ui_screen_del(_UI_SCREEN_INDEX);
     ui_screen_change(0);
 }
 

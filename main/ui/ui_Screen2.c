@@ -13,11 +13,13 @@ static void ui_event_Key_Ok(lv_event_t* e);
 
 lv_obj_t* ui_Screen2_screen_init(void)
 {
-    lv_obj_t* ui_Screen2 = lv_obj_create(NULL);
-    lv_obj_remove_flag( ui_Screen2, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
-    lv_obj_set_style_bg_color(ui_Screen2, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT );
-    lv_obj_set_style_bg_opa(ui_Screen2, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-
+    static lv_obj_t* ui_Screen2 = NULL;
+    if (ui_Screen2 == NULL) {
+        ui_Screen2 = lv_obj_create(NULL);
+        lv_obj_remove_flag(ui_Screen2, LV_OBJ_FLAG_SCROLLABLE);    /// Flags
+        lv_obj_set_style_bg_color(ui_Screen2, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(ui_Screen2, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
 
     lv_obj_t* ui_Panel1 = lv_obj_create(ui_Screen2);
     lv_obj_set_size(ui_Panel1, 492, 66);

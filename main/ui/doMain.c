@@ -257,7 +257,10 @@ static void wifi_command(int op, const char* ssid, const char* pswd)
             return;
         }
 
-        lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, wifi_connect_task, 4096, ssid_pswd);
+        lv_result_t res = lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, wifi_connect_task, 4096, ssid_pswd);
+        if (res != LV_RESULT_OK) {
+            free(ssid_pswd);
+        }
     }
 }
 
@@ -395,7 +398,10 @@ static void weather_command(const char* city_pos, const char* api_key)
         return;
     }
 
-    lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, weather_query_task, 4096, pos_key);
+    lv_result_t res = lv_thread_init(&threadConfig, LV_THREAD_PRIO_MID, weather_query_task, 4096, pos_key);
+    if (res != LV_RESULT_OK) {
+        free(pos_key);
+    }
 }
 
 static void settings_command(const char* cmd, const char* param)
@@ -523,7 +529,10 @@ static void sendCommand_param(_command_param_t* param)
         return;
     }
     cmd_task_status = true;
-    lv_thread_init(&threadCmd, LV_THREAD_PRIO_MID, cmd_task, 0x2000, param);
+    lv_result_t res = lv_thread_init(&threadCmd, LV_THREAD_PRIO_MID, cmd_task, 0x2000, param);
+    if (res != LV_RESULT_OK) {
+        free(param);
+    }
 }
 
 
