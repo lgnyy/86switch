@@ -74,6 +74,7 @@ esp_err_t lvgl_port_init(esp_lcd_panel_handle_t lcd_handle, esp_lcd_touch_handle
 
 void lvgl_port_set_lcd_sleep_cb(void (*sleep_cb)(bool sleep));
 
+void lvgl_port_display_dyn_img(bool sleep);
 
 #ifdef __cplusplus
 }

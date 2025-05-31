@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_lcd_panel_ops.h"
@@ -11,6 +12,7 @@
 #include "esp_lcd_touch.h"
 #include "esp_timer.h"
 #include "esp_log.h"
+#include "yos_http.h"
 #include "lvgl.h"
 #include "lvgl_port.h"
 
@@ -19,8 +21,10 @@ static TaskHandle_t lvgl_task_handle = NULL;
 static int64_t lvgl_touchpad_time = 0;
 static void (*_lcd_sleep_cb)(bool sleep);
 
+static void mem_fs_init(void);
 
-void disp_flush(lv_display_t *disp_drv, const lv_area_t *area, uint8_t *px_map)
+
+static void disp_flush(lv_display_t *disp_drv, const lv_area_t *area, uint8_t *px_map)
 {
     esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) lv_display_get_user_data(disp_drv);
     const int offsetx1 = area->x1;
@@ -167,6 +171,7 @@ esp_err_t lvgl_port_init(esp_lcd_panel_handle_t lcd_handle, esp_lcd_touch_handle
         return ESP_FAIL;
     }
 
+    mem_fs_init();
     return ESP_OK;
 }
 
@@ -175,3 +180,116 @@ void lvgl_port_set_lcd_sleep_cb(void (*sleep_cb)(bool sleep))
 	_lcd_sleep_cb = sleep_cb;
 }
 
+
+/** mem_fs */
+typedef struct _mem_fs_buf_s {
+    uint8_t* base;
+    uint32_t size;
+    uint32_t offset;
+}_mem_fs_buf_t;
+static lv_fs_drv_t mem_fs_drv;
+static _mem_fs_buf_t mem_fs_buf;
+
+
+static void* mem_fs_open(lv_fs_drv_t* drv, const char* path, lv_fs_mode_t mode) {
+    mem_fs_buf.offset = 0;
+    return &mem_fs_buf;
+}
+static lv_fs_res_t mem_fs_close(lv_fs_drv_t* drv, void* file_p) {
+    return LV_FS_RES_OK;
+}
+static lv_fs_res_t mem_fs_read(lv_fs_drv_t* drv, void* file_p, void* buf, uint32_t btr, uint32_t* br) {
+    _mem_fs_buf_t* mem = (_mem_fs_buf_t*)file_p;
+    uint32_t ss = ((mem->size - mem->offset) >= btr) ? btr : (mem->size - mem->offset);
+    lv_memcpy(buf, mem->base + mem->offset, ss);
+    mem->offset += ss;
+    *br = ss;
+    return LV_FS_RES_OK;
+}
+static lv_fs_res_t mem_fs_seek(lv_fs_drv_t* drv, void* file_p, uint32_t pos, lv_fs_whence_t whence) {
+    if (whence == LV_FS_SEEK_SET) {
+        ((_mem_fs_buf_t*)file_p)->offset = pos;
+    }
+    else if (whence == LV_FS_SEEK_CUR) {
+        ((_mem_fs_buf_t*)file_p)->offset += pos;
+    }
+    else {
+        ((_mem_fs_buf_t*)file_p)->offset = ((_mem_fs_buf_t*)file_p)->size - pos;
+    }
+    return LV_FS_RES_OK;
+}
+static lv_fs_res_t mem_fs_tell(lv_fs_drv_t* drv, void* file_p, uint32_t* pos_p) {
+    *pos_p = ((_mem_fs_buf_t*)file_p)->offset;
+    return LV_FS_RES_OK;
+}
+
+static void mem_fs_init(void) {
+    lv_fs_drv_init(&mem_fs_drv);
+    mem_fs_drv.letter = 'M';
+    mem_fs_drv.open_cb = mem_fs_open;
+    mem_fs_drv.close_cb = mem_fs_close;
+    mem_fs_drv.read_cb = mem_fs_read;
+    mem_fs_drv.seek_cb = mem_fs_seek;
+    mem_fs_drv.tell_cb = mem_fs_tell;
+    lv_fs_drv_register(&mem_fs_drv);
+}
+
+static lv_obj_t* dyn_img = NULL;
+static void display_dyn_img_task(void *pvParameters){
+    char url[64];
+    int id = 1 + (((int)esp_timer_get_time()) % 50);
+    if (id <= 28) {
+        snprintf(url, sizeof(url), "http://192.168.3.27/zic/%d.jpeg", id);
+        yos_http_static_request(url, NULL, NULL, NULL, 0, &(mem_fs_buf.base), &(mem_fs_buf.size));
+        if (mem_fs_buf.base != NULL) {
+            lv_lock();
+            dyn_img = lv_image_create(lv_layer_top());
+            lv_obj_center(dyn_img);
+            lv_image_set_src(dyn_img, "M:http.jpeg");
+            lv_unlock();
+        }
+    }
+    else {
+        snprintf(url, sizeof(url), "http://192.168.3.27/zic/g%d.gif", id-28);
+        yos_http_static_request(url, NULL, NULL, NULL, 0, &(mem_fs_buf.base), &(mem_fs_buf.size));
+        if (mem_fs_buf.base != NULL) {
+            lv_lock();
+            dyn_img = lv_gif_create(lv_layer_top());
+            lv_obj_center(dyn_img);
+            lv_img_dsc_t img_dsc = { .data = mem_fs_buf.base, .data_size = mem_fs_buf.size };
+            lv_gif_set_src(dyn_img, &img_dsc);
+            //lv_gif_set_loop_count(dyn_img, 1);
+            lv_unlock();
+        }
+    } 
+
+    vTaskDelete(NULL);
+}
+
+void lvgl_port_display_dyn_img(bool sleep) {
+    if (dyn_img != NULL) {
+        lv_lock();
+        lv_obj_del(dyn_img);
+        dyn_img = NULL;
+        lv_unlock();
+    }
+    if (mem_fs_buf.base != NULL) {
+        yos_http_static_free(mem_fs_buf.base);
+        mem_fs_buf.base = NULL;
+        mem_fs_buf.size = 0;
+    }
+
+    if (!sleep) {
+        time_t now;
+        struct tm timeinfo; 
+ 
+        time(&now); 
+        localtime_r(&now, &timeinfo);
+        if (timeinfo.tm_hour < 6 || timeinfo.tm_hour >= 23) {
+            // 晚上11点到早上6点之间，显示动态图片
+            xTaskCreate(&display_dyn_img_task, "dyn_img_task", 0x2000, NULL, 5, NULL);
+        } else {
+            ESP_LOGI(TAG, "hour: %d", timeinfo.tm_hour);
+        }
+    }
+}

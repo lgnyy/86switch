@@ -260,9 +260,16 @@ static esp_lcd_touch_handle_t _touch_init(void)
 static void esp_lcd_sleep(bool sleep)
 {
     ESP_LOGI(TAG, "sleep:%d", sleep);
-	//esp_lcd_panel_disp_sleep(_lcd_handle, false);
+ 	//esp_lcd_panel_disp_sleep(_lcd_handle, false);
 	esp_lcd_panel_disp_on_off(_lcd_handle, !sleep);
 	gpio_set_level(SWITCH86_PIN_NUM_BK_LIGHT, sleep? SWITCH86_LCD_BK_LIGHT_OFF_LEVEL : SWITCH86_LCD_BK_LIGHT_ON_LEVEL);
+}
+
+static void esp_lcd_sleep_asr(bool sleep)
+{
+    lvgl_port_display_dyn_img(sleep); 
+
+    esp_lcd_sleep(sleep);
 }
 
 #if CONFIG_SWITCH86_LOG_SVR_ENABLE
@@ -326,7 +333,7 @@ void app_main()
     extern esp_err_t rec_asr_init(void (*sleep_cb)(bool sleep));
     extern esp_err_t time_sync_init(void);   
     time_sync_init();
-    rec_asr_init(esp_lcd_sleep);
+    rec_asr_init(esp_lcd_sleep_asr);
     
     ESP_LOGI(TAG, "end esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
  }

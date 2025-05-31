@@ -86,8 +86,14 @@ static void send_speaker_cmd(const char* data, size_t cmd_len)
         memcpy(arg+1, data, cmd_len);
         memcpy(arg+1+cmd_len, "\",1", 4);
 
+        ESP_LOGI(TAG, "esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+
         // 开启新任务
-        xTaskCreate(&send_speaker_cmd_task, "cmd_task", 0x2000, arg, 5, NULL);
+        BaseType_t res = xTaskCreate(&send_speaker_cmd_task, "cmd_task", 0x2000, arg, 5, NULL);
+        if (res != pdPASS){
+            ESP_LOGE(TAG, "Failed to create send_speaker_cmd_task");
+            free(arg);
+        }
     }
 }
 #endif
