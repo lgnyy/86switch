@@ -424,7 +424,7 @@ static int32_t _mqtt_event_handler(void* ev) {
                         }
                     }
                 }
-                cJSON_free(resp);
+                cJSON_Delete(resp);
             }
         }
     }

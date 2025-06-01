@@ -135,7 +135,7 @@ static int json_parse_display(const char* str, weather_display_cb_t display_cb, 
     }
  
 end:
-    cJSON_free(root);
+    cJSON_Delete(root);
     return ret;
 }
 
