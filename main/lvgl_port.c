@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_lcd_panel_ops.h"
@@ -236,32 +235,24 @@ static void mem_fs_init(void) {
 
 static lv_obj_t* dyn_img = NULL;
 static void display_dyn_img_task(void *pvParameters){
-    char url[64];
-    int id = 1 + (((int)esp_timer_get_time()) % 50);
-    if (id <= 28) {
-        snprintf(url, sizeof(url), "%s/%d.jpeg", CONFIG_SWITCH86_LVGL_PORT_IMG_URL, id);
-        yos_http_static_request(url, NULL, NULL, NULL, 0, &(mem_fs_buf.base), &(mem_fs_buf.size));
-        if (mem_fs_buf.base != NULL) {
-            lv_lock();
-            dyn_img = lv_image_create(lv_layer_top());
-            lv_obj_center(dyn_img);
-            lv_image_set_src(dyn_img, "M:http.jpeg");
-            lv_unlock();
-        }
-    }
-    else {
-        snprintf(url, sizeof(url), "%s/g%d.gif", CONFIG_SWITCH86_LVGL_PORT_IMG_URL, id-28);
-        yos_http_static_request(url, NULL, NULL, NULL, 0, &(mem_fs_buf.base), &(mem_fs_buf.size));
-        if (mem_fs_buf.base != NULL) {
-            lv_lock();
+    const char* header = "Authorization: Basic " CONFIG_SWITCH86_LVGL_PORT_IMG_AUTH;
+    yos_http_static_request(CONFIG_SWITCH86_LVGL_PORT_IMG_URL, NULL, header, NULL, 0, &(mem_fs_buf.base), &(mem_fs_buf.size));
+    if (mem_fs_buf.base != NULL) {
+        lv_lock();
+        if (mem_fs_buf.base[0] == 'G'){
             dyn_img = lv_gif_create(lv_layer_top());
             lv_obj_center(dyn_img);
             lv_img_dsc_t img_dsc = { .data = mem_fs_buf.base, .data_size = mem_fs_buf.size };
             lv_gif_set_src(dyn_img, &img_dsc);
             //lv_gif_set_loop_count(dyn_img, 1);
-            lv_unlock();
+
+        }else{
+            dyn_img = lv_image_create(lv_layer_top());
+            lv_obj_center(dyn_img);
+            lv_image_set_src(dyn_img, "M:http.jpeg");
         }
-    } 
+        lv_unlock();
+    }
 
     vTaskDelete(NULL);
 }
@@ -280,16 +271,6 @@ void lvgl_port_display_dyn_img(bool sleep) {
     }
 
     if (!sleep) {
-        time_t now;
-        struct tm timeinfo; 
- 
-        time(&now); 
-        localtime_r(&now, &timeinfo);
-        if (timeinfo.tm_hour < 6 || timeinfo.tm_hour >= 23) {
-            // 晚上11点到早上6点之间，显示动态图片
-            xTaskCreate(&display_dyn_img_task, "dyn_img_task", 0x2000, NULL, 5, NULL);
-        } else {
-            ESP_LOGI(TAG, "hour: %d", timeinfo.tm_hour);
-        }
+        xTaskCreate(&display_dyn_img_task, "dyn_img_task", 0x2000, NULL, 5, NULL);
     }
 }

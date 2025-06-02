@@ -67,9 +67,15 @@ menu "Switch86 Configuration"
 
         config SWITCH86_LVGL_PORT_IMG_URL
             string "http url"
-            default "http://192.168.3.27/zic"
+            default "http://192.168.3.27/zic/xxx"
             help
                 Set image service address.                
+
+        config SWITCH86_LVGL_PORT_IMG_AUTH
+            string "http auth(test:test)"
+            default "dGVzdDp0ZXN0"
+            help
+                Set image service basic authorization.                
     endmenu
 
     menu "I2S MEMS MIC Configuration"
