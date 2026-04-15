@@ -212,7 +212,7 @@ static void websocket_task(i2s_chan_handle_t rx_handle)
 
     char i2s_readraw_buff[32*30];  // 录音缓冲区
     int rec_cnt = 0; // 有效录音数量
-    int nav_cnt = 0; // 五声数量
+    int nav_cnt = 0; // 无声数量
     while (true){
         size_t bytes_read = 0;
         ESP_ERROR_CHECK(i2s_channel_read(rx_handle, i2s_readraw_buff, sizeof(i2s_readraw_buff), &bytes_read, 1000));
@@ -230,7 +230,8 @@ static void websocket_task(i2s_chan_handle_t rx_handle)
                 esp_websocket_client_send_bin(client, i2s_readraw_buff, bytes_read, portMAX_DELAY);
                 rec_cnt = 1;
                 nav_cnt = 0;
-                ESP_LOGI(TAG, "start");
+                //ESP_LOGI(TAG, "start");
+                ESP_LOGI(TAG, "start esp_get_free_heap_size:%ld, _internal_heap_size: %ld", esp_get_free_heap_size(), esp_get_free_internal_heap_size());
             }
             continue;
         }
@@ -241,7 +242,8 @@ static void websocket_task(i2s_chan_handle_t rx_handle)
 
         if ((rec_cnt >= 100) || (nav_cnt >= 10)){ // 3秒 或 连续300毫秒没有声音
             esp_websocket_client_send_text(client, fun_asr_finish_str, strlen(fun_asr_finish_str), portMAX_DELAY);
-            ESP_LOGI(TAG, "rec_cnt=%d, nav_cnt=%d, end", rec_cnt, nav_cnt);
+            //ESP_LOGI(TAG, "rec_cnt=%d, nav_cnt=%d, end", rec_cnt, nav_cnt);
+            ESP_LOGI(TAG, "rec_cnt=%d, nav_cnt=%d, _internal_heap_size: %ld, end", rec_cnt, nav_cnt, esp_get_free_internal_heap_size());
             rec_cnt = 0;
         }
     }
