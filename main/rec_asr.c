@@ -212,14 +212,15 @@ static void websocket_task(i2s_chan_handle_t rx_handle)
 
     char i2s_readraw_buff[32*30];  // 录音缓冲区
     int rec_cnt = 0; // 有效录音数量
-    int nav_cnt = 0; // 五声数量
+    int nav_cnt = 0; // 无声数量
     while (true){
         size_t bytes_read = 0;
         ESP_ERROR_CHECK(i2s_channel_read(rx_handle, i2s_readraw_buff, sizeof(i2s_readraw_buff), &bytes_read, 1000));
 
         // 检查WebSocket连接状态
         if (!esp_websocket_client_is_connected(client)) {
-            continue;
+			rec_cnt  = 0;
+			continue;
         }
 
         // 检查是否有语音
