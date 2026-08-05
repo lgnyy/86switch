@@ -219,7 +219,8 @@ static void websocket_task(i2s_chan_handle_t rx_handle)
 
         // 检查WebSocket连接状态
         if (!esp_websocket_client_is_connected(client)) {
-            continue;
+			rec_cnt  = 0;
+			continue;
         }
 
         // 检查是否有语音
